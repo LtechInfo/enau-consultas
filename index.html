@@ -65,6 +65,13 @@
     color: #9a7fa8;
   }
   .login-footer strong { color: #7b5d8d; font-weight: 600; }
+  .system-credit {
+    text-align: center;
+    font-size: 0.74rem;
+    color: rgba(61, 26, 79, 0.55);
+    padding: 10px 16px 20px;
+  }
+  .system-credit strong { color: rgba(61, 26, 79, 0.78); font-weight: 600; }
 
   /* ─ APP ─ */
   #app-screen { display: none; min-height: 100vh; flex-direction: column; }
@@ -268,7 +275,7 @@
       <div><label>Usuário</label><input type="text" id="input-user" placeholder="Digite seu usuário" autocomplete="username"/></div>
       <div><label>Senha</label><input type="password" id="input-pass" placeholder="Digite sua senha" autocomplete="current-password"/></div>
       <button class="login-btn" onclick="doLogin()">Entrar</button>
-      <div class="login-footer">Sistema interno <strong>ENAU</strong></div>
+      <div class="login-footer">Idealizado e desenvolvido por <strong>Lucas Martins</strong> · <strong>LTech Informática</strong> - 2026</div>
       <div class="login-error" id="login-error">Usuário ou senha incorretos.</div>
     </div>
   </div>
@@ -339,6 +346,7 @@
     </div>
     <div id="pagination" class="pagination"></div>
   </main>
+  <div class="system-credit">Idealizado e desenvolvido por <strong>Lucas Martins</strong> · <strong>LTech Informática</strong> - 2026</div>
 </div>
 
 <!-- ═══ ADMIN ═══ -->
@@ -484,6 +492,7 @@
       </div>
     </div>
   </div>
+  <div class="system-credit">Idealizado e desenvolvido por <strong>Lucas Martins</strong> · <strong>LTech Informática</strong> - 2026</div>
 </div>
 
 <!-- MODAL FICHA -->
