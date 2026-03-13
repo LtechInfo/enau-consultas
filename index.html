@@ -27,23 +27,44 @@
   /* ─ LOGIN ─ */
   #login-screen {
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(145deg, #2A0A3F 0%, #4A1E6A 45%, #6B2A6B 80%, #8B3030 100%);
+    background: linear-gradient(180deg, #4b1538 0%, #5b183d 100%);
     padding: 24px;
   }
   .login-card {
-    background: var(--white); border-radius: 20px; padding: 40px 44px 36px;
-    width: 100%; max-width: 420px; box-shadow: 0 24px 80px rgba(0,0,0,0.35); text-align: center;
+    background: var(--white); border-radius: 14px; overflow: hidden;
+    width: 100%; max-width: 402px; box-shadow: 0 24px 80px rgba(24, 4, 18, 0.35); text-align: center;
   }
-  .login-logo { margin: 0 auto 18px; width: 140px; }
+  .login-hero {
+    background: linear-gradient(135deg, #4f2368 0%, #d04f66 100%);
+    padding: 38px 32px 28px;
+    min-height: 270px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-logo { margin: 0 auto 28px; width: 205px; }
   .login-logo img { width: 100%; height: auto; }
   .login-card h1 { display: none; }
-  .login-card .subtitle { color: var(--g500); font-size: 0.85rem; margin-bottom: 32px; font-weight: 400; }
-  .login-form label { display: block; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--g700); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
-  .login-form input { width: 100%; padding: 12px 15px; border: 2px solid var(--g200); border-radius: var(--r); font-size: 0.9rem; font-family: inherit; color: var(--text); background: var(--g100); transition: all 0.2s; margin-bottom: 16px; outline: none; }
-  .login-form input:focus { border-color: var(--navy); background: var(--white); box-shadow: 0 0 0 3px rgba(107,42,107,0.12); }
-  .login-btn { width: 100%; padding: 13px; background: var(--navy); color: var(--white); border: none; border-radius: var(--r); font-size: 0.95rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.2s; }
-  .login-btn:hover { background: var(--navy2); }
-  .login-error { color: #c0392b; font-size: 0.83rem; margin-top: 12px; display: none; padding: 9px 13px; background: #fdf0ee; border-radius: 8px; border-left: 3px solid #c0392b; text-align: left; }
+  .login-card .subtitle { color: rgba(255,255,255,0.92); font-size: 0.95rem; font-weight: 500; }
+  .login-form {
+    padding: 30px 32px 18px;
+    background: #ffffff;
+  }
+  .login-form label { display: block; text-align: left; font-size: 0.75rem; font-weight: 700; color: #5b3a75; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
+  .login-form input { width: 100%; padding: 12px 15px; border: 1.5px solid #e7d3ef; border-radius: 8px; font-size: 0.95rem; font-family: inherit; color: var(--text); background: #eef4ff; transition: all 0.2s; margin-bottom: 18px; outline: none; }
+  .login-form input:focus { border-color: #c983b9; background: #f8fbff; box-shadow: 0 0 0 3px rgba(201,131,185,0.14); }
+  .login-btn { width: 100%; padding: 13px; background: #45215a; color: var(--white); border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: background 0.2s; }
+  .login-btn:hover { background: #5a2d74; }
+  .login-error { color: #8f2335; font-size: 0.83rem; margin-top: 14px; display: none; padding: 10px 12px; background: #fff2f4; border-radius: 8px; border-left: 3px solid #d04f66; text-align: left; }
+  .login-footer {
+    border-top: 1px solid #eadfec;
+    margin-top: 18px;
+    padding: 16px 4px 2px;
+    font-size: 0.75rem;
+    color: #9a7fa8;
+  }
+  .login-footer strong { color: #7b5d8d; font-weight: 600; }
 
   /* ─ APP ─ */
   #app-screen { display: none; min-height: 100vh; flex-direction: column; }
@@ -224,6 +245,9 @@
     .header-brand-text span { display: none; }
     .user-badge { display: none; }
     .modal-body, .modal-header { padding: 18px; }
+    .login-hero { min-height: 220px; padding: 28px 24px 22px; }
+    .login-form { padding: 24px 22px 16px; }
+    .login-logo { width: 180px; margin-bottom: 22px; }
   }
 </style>
 </head>
@@ -232,12 +256,14 @@
 <!-- ═══ LOGIN ═══ -->
 <div id="login-screen">
   <div class="login-card">
+    <div class="login-hero">
     <div class="login-logo">
       <img src="logo.png" alt="Colégio ENAU" onerror="this.style.display='none'; document.getElementById('login-fallback').style.display='block'"/>
-      <div id="login-fallback" style="display:none; font-size:1.8rem; font-weight:800; color:var(--navy); letter-spacing:-1px;">ENAU</div>
+      <div id="login-fallback" style="display:none; font-size:1.8rem; font-weight:800; color:#ffffff; letter-spacing:-1px;">ENAU</div>
     </div>
     <h1>Colégio ENAU</h1>
     <p class="subtitle">Sistema de Consulta de Alunos</p>
+    </div>
     <div class="login-form">
       <div><label>Usuário</label><input type="text" id="input-user" placeholder="Digite seu usuário" autocomplete="username"/></div>
       <div><label>Senha</label><input type="password" id="input-pass" placeholder="Digite sua senha" autocomplete="current-password"/></div>
