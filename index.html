@@ -700,43 +700,6 @@
   </div>
   <div class="system-credit">Idealizado e desenvolvido por <strong>Lucas Martins</strong> · <strong>LTech Informatica</strong> - 2026</div>
 </div>
-
-    <div class="admin-panel" id="tab-users">
-      <div class="admin-stack">
-        <div class="form-card">
-          <div class="section-title">Usuarios do Sistema</div>
-          <div class="section-sub">Cadastre, edite e remova acessos ao sistema</div>
-          <div id="alert-users-list" class="alert"></div>
-          <div class="admin-search-row">
-            <input class="admin-search-input" id="user-search" type="text" placeholder="Buscar por usuario ou nome..." oninput="renderUserList()"/>
-          </div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr>
-                <th>Usuario</th><th>Nome</th><th>Perfil</th><th>Acoes</th>
-              </tr></thead>
-              <tbody id="users-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-        <div class="form-card">
-          <div class="section-title" id="user-form-title">Cadastrar Usuario</div>
-          <div class="section-sub" id="user-form-sub">Defina login, nome, senha e perfil de acesso</div>
-          <div id="alert-users-form" class="alert"></div>
-          <div class="form-grid">
-            <div class="form-group"><label>Usuario *</label><input id="u-username" type="text" placeholder="Ex: secretaria"/></div>
-            <div class="form-group"><label>Nome *</label><input id="u-name" type="text" placeholder="Nome exibido no sistema"/></div>
-            <div class="form-group"><label>Senha *</label><input id="u-pass" type="text" placeholder="Defina uma senha"/></div>
-            <div class="form-group"><label>Perfil *</label><select id="u-role"><option value="user">Usuario</option><option value="admin">Administrador</option></select></div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-primary" onclick="saveUser()" id="btn-save-user">Salvar Usuario</button>
-            <button class="btn-secondary" onclick="clearUserForm()">Limpar</button>
-            <button class="btn-danger" onclick="clearUserForm()" id="btn-cancel-user-edit" style="display:none">Cancelar Edicao</button>
-          </div>
-        </div>
-      </div>
-    </div>
 <!-- MODAL FICHA -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal" id="modal">
@@ -893,7 +856,7 @@ function initApp() {
 }
 
 function fmtTurma(t) { return TURMA_LABELS[t] || t; }
-function norm(s) { return (s||'').toLowerCase().normalize('NFD').replace(/[Ì€-Í¯]/g,''); }
+function norm(s) { return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 
 function doSearch() {
   const q = norm(document.getElementById('search-input').value.trim());
