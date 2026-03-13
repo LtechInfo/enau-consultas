@@ -766,7 +766,7 @@ const TURMA_LABELS = {
   'EN_EM2_M_A':'EM 2º Ano (M)','EN_EM3_M_A':'EM 3º Ano (M)',
   'EN_COMPLEMENTA':'Período Complementar','EN_COMP_AVULSO':'Compl. Avulso'
 };
-let USERS = loadUsers();
+let USERS;
 const TURMAS_BY_CURSO = {
   'Educação Infantil':['EN_MATERNAL1_T_','EN_MATERNAL2_T_','EN_EI1_T_A','EN_EI2_T_A'],
   'Ensino Fundamental':['EN_EF1_T_A','EN_EF2_T_A','EN_EF3_T_A','EN_EF4_T_A','EN_EF5_T_A','EN_EF6_M_A','EN_EF7_M_A','EN_EF8_M_A','EN_EF9_M_A'],
@@ -780,6 +780,7 @@ const DEFAULT_USERS = {
   'direcao': {pass:'direcao2026',name:'Direção',         role:'user'},
   'admin':   {pass:'admin123',   name:'Administrador',   role:'admin'}
 };
+USERS = loadUsers();
 
 // ═══════════════════════════════
 // AUTH
