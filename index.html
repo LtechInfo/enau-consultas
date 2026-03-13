@@ -21,8 +21,40 @@
     --shadow: 0 4px 24px rgba(61,26,79,0.10);
     --r: 12px;
   }
+  body.dark-theme {
+    --navy: #d6b7ff;
+    --navy2: #f0c6ff;
+    --coral: #ff8b7b;
+    --coral2: #ff9f92;
+    --cream: #0f1015;
+    --white: #171922;
+    --g100: #202330;
+    --g200: #2f3445;
+    --g500: #a7b0c7;
+    --g700: #e7ebf7;
+    --text: #f3f5fb;
+    --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Poppins', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+  .theme-toggle {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 400;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(25, 16, 36, 0.42);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    transition: all 0.2s;
+  }
+  .theme-toggle:hover { background: rgba(25, 16, 36, 0.65); }
 
   /* ─ LOGIN ─ */
   #login-screen {
@@ -72,6 +104,7 @@
     padding: 10px 16px 20px;
   }
   .system-credit strong { color: rgba(61, 26, 79, 0.78); font-weight: 600; }
+  .hl-match { background: #f0c4f0; border-radius: 2px; }
 
   /* ─ APP ─ */
   #app-screen { display: none; min-height: 100vh; flex-direction: column; }
@@ -196,6 +229,7 @@
   .tab-btn:hover:not(.active) { background: var(--g100); color: var(--g700); }
   .admin-panel { display: none; }
   .admin-panel.active { display: block; }
+  .admin-stack { display: grid; gap: 18px; }
   .form-card { background: var(--white); border-radius: 14px; padding: 28px; box-shadow: var(--shadow); }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .form-group { display: flex; flex-direction: column; gap: 5px; }
@@ -244,6 +278,140 @@
   .section-title { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
   .section-sub { font-size: 0.82rem; color: var(--g500); margin-bottom: 18px; }
 
+  body.dark-theme .theme-toggle {
+    background: rgba(220, 225, 255, 0.08);
+    border-color: rgba(220, 225, 255, 0.12);
+    color: #edf2ff;
+  }
+  body.dark-theme #login-screen {
+    background: linear-gradient(180deg, #090a0f 0%, #131522 100%);
+  }
+  body.dark-theme .login-card {
+    background: #12141b;
+    box-shadow: 0 28px 70px rgba(0,0,0,0.45);
+  }
+  body.dark-theme .login-hero {
+    background: linear-gradient(135deg, #301645 0%, #7d3550 100%);
+  }
+  body.dark-theme .login-form {
+    background: #12141b;
+  }
+  body.dark-theme .login-form label,
+  body.dark-theme .page-title,
+  body.dark-theme .results-count strong,
+  body.dark-theme .stat-value,
+  body.dark-theme .td-nome,
+  body.dark-theme .parent-card .pname,
+  body.dark-theme .section-title {
+    color: var(--text);
+  }
+  body.dark-theme .login-form input,
+  body.dark-theme .search-input,
+  body.dark-theme .filter-select,
+  body.dark-theme .clear-btn,
+  body.dark-theme .page-btn,
+  body.dark-theme .form-group input,
+  body.dark-theme .form-group select,
+  body.dark-theme .admin-search-input,
+  body.dark-theme textarea {
+    background: #1b1f2a;
+    color: var(--text);
+    border-color: #343b4e;
+  }
+  body.dark-theme .search-area,
+  body.dark-theme .stat-card,
+  body.dark-theme .table-wrap,
+  body.dark-theme .modal,
+  body.dark-theme .parent-card,
+  body.dark-theme .admin-tabs,
+  body.dark-theme .form-card,
+  body.dark-theme .admin-table-wrap,
+  body.dark-theme .batch-preview-wrap {
+    background: var(--white);
+  }
+  body.dark-theme tbody tr,
+  body.dark-theme .admin-table tbody tr,
+  body.dark-theme .preview-table td {
+    border-color: #232838;
+  }
+  body.dark-theme tbody tr:hover,
+  body.dark-theme .admin-table tbody tr:hover,
+  body.dark-theme .preview-table tr:hover td {
+    background: #1d2130;
+  }
+  body.dark-theme .td-turma,
+  body.dark-theme .phone-chip,
+  body.dark-theme .btn-secondary,
+  body.dark-theme .batch-area,
+  body.dark-theme .preview-table th {
+    background: #1d2230;
+    color: var(--g700);
+    border-color: #33384a;
+  }
+  body.dark-theme .phone-cell,
+  body.dark-theme .page-sub,
+  body.dark-theme .results-count,
+  body.dark-theme .empty-state,
+  body.dark-theme .parent-card .pcontact,
+  body.dark-theme .system-credit,
+  body.dark-theme .login-footer {
+    color: var(--g500);
+  }
+  body.dark-theme .system-credit strong,
+  body.dark-theme .login-footer strong {
+    color: #d8deef;
+  }
+  body.dark-theme .modal-overlay {
+    background: rgba(5, 8, 14, 0.72);
+  }
+  body.dark-theme header,
+  body.dark-theme thead,
+  body.dark-theme .admin-table thead,
+  body.dark-theme .modal-header,
+  body.dark-theme .tab-btn.active,
+  body.dark-theme .btn-primary,
+  body.dark-theme .file-input-label,
+  body.dark-theme .page-btn.active {
+    background: #6d4ad3;
+    color: #fff;
+    border-color: #6d4ad3;
+  }
+  body.dark-theme .nav-btn.active {
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.22);
+    color: #fff;
+  }
+  body.dark-theme .nav-btn.inactive,
+  body.dark-theme .user-badge span,
+  body.dark-theme .logout-btn {
+    color: rgba(255,255,255,0.82);
+  }
+  body.dark-theme .logout-btn {
+    border-color: rgba(255,255,255,0.2);
+  }
+  body.dark-theme .edit-row-btn {
+    color: #e9ddff;
+    border-color: rgba(160,130,255,0.35);
+    background: rgba(160,130,255,0.16);
+  }
+  body.dark-theme .edit-row-btn:hover {
+    background: #6d4ad3;
+    color: #fff;
+  }
+  body.dark-theme .del-row-btn {
+    color: #ffb3ab;
+    border-color: rgba(255,138,123,0.35);
+    background: rgba(255,138,123,0.12);
+  }
+  body.dark-theme .del-row-btn:hover {
+    background: #a94136;
+    color: #fff;
+  }
+  body.dark-theme .hl-match {
+    background: #51306d;
+    color: #fff;
+  }
+
   @media (max-width: 640px) {
     main, .admin-main { padding: 14px; }
     .search-row { flex-direction: column; }
@@ -259,6 +427,7 @@
 </style>
 </head>
 <body>
+<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">Modo Escuro</button>
 
 <!-- ═══ LOGIN ═══ -->
 <div id="login-screen">
@@ -374,6 +543,7 @@
       <button class="tab-btn active" onclick="switchTab('tab-list')">📋 Listar / Editar</button>
       <button class="tab-btn" onclick="switchTab('tab-add')">➕ Novo Aluno</button>
       <button class="tab-btn" onclick="switchTab('tab-batch')">📤 Importação em Lote</button>
+      <button class="tab-btn" onclick="switchTab('tab-users')">UsuÃ¡rios</button>
     </div>
 
     <!-- LIST TAB -->
@@ -491,10 +661,82 @@
         </div>
       </div>
     </div>
+    <div class="admin-panel" id="tab-users">
+      <div class="admin-stack">
+        <div class="form-card">
+          <div class="section-title">UsuÃ¡rios do Sistema</div>
+          <div class="section-sub">Cadastre, edite e remova acessos ao sistema</div>
+          <div id="alert-users-list" class="alert"></div>
+          <div class="admin-search-row">
+            <input class="admin-search-input" id="user-search" type="text" placeholder="Buscar por usuÃ¡rio ou nome..." oninput="renderUserList()"/>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr>
+                <th>UsuÃ¡rio</th><th>Nome</th><th>Perfil</th><th>AÃ§Ãµes</th>
+              </tr></thead>
+              <tbody id="users-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="form-card">
+          <div class="section-title" id="user-form-title">Cadastrar UsuÃ¡rio</div>
+          <div class="section-sub" id="user-form-sub">Defina login, nome, senha e perfil de acesso</div>
+          <div id="alert-users-form" class="alert"></div>
+          <div class="form-grid">
+            <div class="form-group"><label>UsuÃ¡rio *</label><input id="u-username" type="text" placeholder="Ex: secretaria"/></div>
+            <div class="form-group"><label>Nome *</label><input id="u-name" type="text" placeholder="Nome exibido no sistema"/></div>
+            <div class="form-group"><label>Senha *</label><input id="u-pass" type="text" placeholder="Defina uma senha"/></div>
+            <div class="form-group"><label>Perfil *</label><select id="u-role"><option value="user">UsuÃ¡rio</option><option value="admin">Administrador</option></select></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" onclick="saveUser()" id="btn-save-user">Salvar UsuÃ¡rio</button>
+            <button class="btn-secondary" onclick="clearUserForm()">Limpar</button>
+            <button class="btn-danger" onclick="clearUserForm()" id="btn-cancel-user-edit" style="display:none">Cancelar EdiÃ§Ã£o</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="system-credit">Idealizado e desenvolvido por <strong>Lucas Martins</strong> · <strong>LTech Informática</strong> - 2026</div>
 </div>
 
+    <div class="admin-panel" id="tab-users">
+      <div class="admin-stack">
+        <div class="form-card">
+          <div class="section-title">UsuÃ¡rios do Sistema</div>
+          <div class="section-sub">Cadastre, edite e remova acessos ao sistema</div>
+          <div id="alert-users-list" class="alert"></div>
+          <div class="admin-search-row">
+            <input class="admin-search-input" id="user-search" type="text" placeholder="Buscar por usuÃ¡rio ou nome..." oninput="renderUserList()"/>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr>
+                <th>UsuÃ¡rio</th><th>Nome</th><th>Perfil</th><th>AÃ§Ãµes</th>
+              </tr></thead>
+              <tbody id="users-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="form-card">
+          <div class="section-title" id="user-form-title">Cadastrar UsuÃ¡rio</div>
+          <div class="section-sub" id="user-form-sub">Defina login, nome, senha e perfil de acesso</div>
+          <div id="alert-users-form" class="alert"></div>
+          <div class="form-grid">
+            <div class="form-group"><label>UsuÃ¡rio *</label><input id="u-username" type="text" placeholder="Ex: secretaria"/></div>
+            <div class="form-group"><label>Nome *</label><input id="u-name" type="text" placeholder="Nome exibido no sistema"/></div>
+            <div class="form-group"><label>Senha *</label><input id="u-pass" type="text" placeholder="Defina uma senha"/></div>
+            <div class="form-group"><label>Perfil *</label><select id="u-role"><option value="user">UsuÃ¡rio</option><option value="admin">Administrador</option></select></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" onclick="saveUser()" id="btn-save-user">Salvar UsuÃ¡rio</button>
+            <button class="btn-secondary" onclick="clearUserForm()">Limpar</button>
+            <button class="btn-danger" onclick="clearUserForm()" id="btn-cancel-user-edit" style="display:none">Cancelar EdiÃ§Ã£o</button>
+          </div>
+        </div>
+      </div>
+    </div>
 <!-- MODAL FICHA -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal" id="modal">
@@ -524,6 +766,7 @@ const TURMA_LABELS = {
   'EN_EM2_M_A':'EM 2º Ano (M)','EN_EM3_M_A':'EM 3º Ano (M)',
   'EN_COMPLEMENTA':'Período Complementar','EN_COMP_AVULSO':'Compl. Avulso'
 };
+let USERS = loadUsers();
 const TURMAS_BY_CURSO = {
   'Educação Infantil':['EN_MATERNAL1_T_','EN_MATERNAL2_T_','EN_EI1_T_A','EN_EI2_T_A'],
   'Ensino Fundamental':['EN_EF1_T_A','EN_EF2_T_A','EN_EF3_T_A','EN_EF4_T_A','EN_EF5_T_A','EN_EF6_M_A','EN_EF7_M_A','EN_EF8_M_A','EN_EF9_M_A'],
@@ -531,7 +774,7 @@ const TURMAS_BY_CURSO = {
   'Período Complementar':['EN_COMPLEMENTA','EN_COMP_AVULSO']
 };
 
-const USERS = {
+const DEFAULT_USERS = {
   'enau':    {pass:'enau2026',   name:'Secretaria ENAU', role:'user'},
   'coord':   {pass:'coord2026',  name:'Coordenação',     role:'user'},
   'direcao': {pass:'direcao2026',name:'Direção',         role:'user'},
@@ -542,8 +785,43 @@ const USERS = {
 // AUTH
 // ═══════════════════════════════
 let currentUser = null;
+let userPageMode = 'create';
+
+function loadUsers() {
+  try {
+    const saved = localStorage.getItem('enau_users');
+    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_USERS));
+  } catch (_) {
+    return JSON.parse(JSON.stringify(DEFAULT_USERS));
+  }
+}
+function saveUsersStore() {
+  localStorage.setItem('enau_users', JSON.stringify(USERS));
+}
+function applyTheme(theme) {
+  const dark = theme === 'dark';
+  document.body.classList.toggle('dark-theme', dark);
+  localStorage.setItem('enau_theme', dark ? 'dark' : 'light');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = dark ? 'Modo Claro' : 'Modo Escuro';
+}
+function toggleTheme() {
+  applyTheme(document.body.classList.contains('dark-theme') ? 'light' : 'dark');
+}
+function syncCurrentUserUI() {
+  const uinfo = USERS[currentUser];
+  if (!uinfo) {
+    doLogout();
+    return;
+  }
+  document.getElementById('user-name-badge').textContent = uinfo.name;
+  document.getElementById('user-name-badge2').textContent = uinfo.name;
+  document.getElementById('btn-nav-admin').style.display = uinfo.role === 'admin' ? 'block' : 'none';
+  if (uinfo.role !== 'admin') navTo('consulta');
+}
 
 document.addEventListener('DOMContentLoaded', () => {
+  applyTheme(localStorage.getItem('enau_theme') || 'light');
   const saved = sessionStorage.getItem('enau_user');
   if (saved && USERS[saved]) { currentUser = saved; showApp(); }
   document.getElementById('input-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
@@ -571,12 +849,7 @@ function showApp() {
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-screen').style.display='flex';
   document.getElementById('admin-screen').style.display='none';
-  const uinfo = USERS[currentUser];
-  document.getElementById('user-name-badge').textContent = uinfo.name;
-  document.getElementById('user-name-badge2').textContent = uinfo.name;
-  // Show admin btn only for admins
-  const adminBtn = document.getElementById('btn-nav-admin');
-  adminBtn.style.display = uinfo.role === 'admin' ? 'block' : 'none';
+  syncCurrentUserUI();
   initApp();
 }
 
@@ -586,6 +859,7 @@ function navTo(dest) {
     document.getElementById('app-screen').style.display='none';
     document.getElementById('admin-screen').style.display='flex';
     initAdminList();
+    renderUserList();
   } else {
     document.getElementById('admin-screen').style.display='none';
     document.getElementById('app-screen').style.display='flex';
@@ -666,7 +940,7 @@ function hl(text, q) {
   if(!q||!text) return text||'—';
   const nT=norm(text), nQ=norm(q), idx=nT.indexOf(nQ);
   if(idx===-1) return text;
-  return text.slice(0,idx)+'<mark style="background:#f0c4f0;border-radius:2px">'+text.slice(idx,idx+q.length)+'</mark>'+text.slice(idx+q.length);
+  return text.slice(0,idx)+'<mark class="hl-match">'+text.slice(idx,idx+q.length)+'</mark>'+text.slice(idx+q.length);
 }
 
 function render() {
@@ -776,7 +1050,8 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') closeModalBtn()
 let adminPage = 1;
 const ADMIN_PER = 20;
 
-function initAdminList() { renderAdminList(); }
+function initAdminList() { renderAdminList(); renderUserList(); }
+function initUsersAdmin() { renderUserList(); clearUserForm(); }
 
 function renderAdminList() {
   const q = norm(document.getElementById('admin-search').value.trim());
@@ -810,6 +1085,92 @@ function renderAdminList() {
   document.getElementById('admin-pagination').innerHTML=ph;
 }
 function adminGoPage(p){ adminPage=p; renderAdminList(); }
+
+function renderUserList() {
+  const body = document.getElementById('users-table-body');
+  if (!body) return;
+  const q = norm((document.getElementById('user-search')?.value || '').trim());
+  const entries = Object.entries(USERS)
+    .filter(([username, user]) => !q || norm(username).includes(q) || norm(user.name).includes(q))
+    .sort((a, b) => a[0].localeCompare(b[0], 'pt'));
+  body.innerHTML = entries.map(([username, user]) => `
+    <tr>
+      <td><strong>${username}</strong></td>
+      <td>${user.name}</td>
+      <td>${user.role === 'admin' ? 'Administrador' : 'UsuÃ¡rio'}</td>
+      <td>
+        <button class="edit-row-btn" onclick="editUser('${username}')">Editar</button>
+        <button class="del-row-btn" onclick="deleteUser('${username}')">Excluir</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function editUser(username) {
+  const user = USERS[username];
+  if (!user) return;
+  switchTab('tab-users');
+  userPageMode = 'edit';
+  document.getElementById('u-username').value = username;
+  document.getElementById('u-username').disabled = true;
+  document.getElementById('u-name').value = user.name;
+  document.getElementById('u-pass').value = user.pass;
+  document.getElementById('u-role').value = user.role;
+  document.getElementById('btn-save-user').setAttribute('data-edit-username', username);
+  document.getElementById('btn-save-user').textContent = 'Atualizar UsuÃ¡rio';
+  document.getElementById('btn-cancel-user-edit').style.display = 'block';
+  document.getElementById('user-form-title').textContent = 'Editar UsuÃ¡rio';
+  document.getElementById('user-form-sub').textContent = `Editando o acesso de ${user.name}`;
+}
+
+function clearUserForm() {
+  userPageMode = 'create';
+  ['u-username', 'u-name', 'u-pass'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('u-role').value = 'user';
+  document.getElementById('u-username').disabled = false;
+  document.getElementById('btn-save-user').removeAttribute('data-edit-username');
+  document.getElementById('btn-save-user').textContent = 'Salvar UsuÃ¡rio';
+  document.getElementById('btn-cancel-user-edit').style.display = 'none';
+  document.getElementById('user-form-title').textContent = 'Cadastrar UsuÃ¡rio';
+  document.getElementById('user-form-sub').textContent = 'Defina login, nome, senha e perfil de acesso';
+}
+
+function saveUser() {
+  const username = document.getElementById('u-username').value.trim().toLowerCase();
+  const name = document.getElementById('u-name').value.trim();
+  const pass = document.getElementById('u-pass').value.trim();
+  const role = document.getElementById('u-role').value;
+  const editing = document.getElementById('btn-save-user').getAttribute('data-edit-username');
+  if (!username || !name || !pass || !role) {
+    showAlert('alert-users-form', 'error', 'UsuÃ¡rio, nome, senha e perfil sÃ£o obrigatÃ³rios.');
+    return;
+  }
+  if (!editing && USERS[username]) {
+    showAlert('alert-users-form', 'error', `O usuÃ¡rio ${username} jÃ¡ existe.`);
+    return;
+  }
+  const targetKey = editing || username;
+  USERS[targetKey] = { name, pass, role };
+  saveUsersStore();
+  clearUserForm();
+  renderUserList();
+  if (targetKey === currentUser) syncCurrentUserUI();
+  showAlert('alert-users-form', 'success', editing ? 'UsuÃ¡rio atualizado com sucesso.' : 'UsuÃ¡rio cadastrado com sucesso.');
+}
+
+function deleteUser(username) {
+  if (!USERS[username]) return;
+  if (username === currentUser) {
+    showAlert('alert-users-list', 'error', 'VocÃª nÃ£o pode excluir o usuÃ¡rio atualmente logado.');
+    return;
+  }
+  if (!confirm(`Excluir o usuÃ¡rio ${username}?`)) return;
+  delete USERS[username];
+  saveUsersStore();
+  renderUserList();
+  clearUserForm();
+  showAlert('alert-users-list', 'success', 'UsuÃ¡rio excluÃ­do com sucesso.');
+}
 
 function editAluno(idx) {
   const a = ALUNOS[idx];
@@ -1001,9 +1362,10 @@ function switchTab(tabId) {
   document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
-  const idx=['tab-list','tab-add','tab-batch'].indexOf(tabId);
+  const idx=['tab-list','tab-add','tab-batch','tab-users'].indexOf(tabId);
   document.querySelectorAll('.tab-btn')[idx].classList.add('active');
   if(tabId==='tab-list') renderAdminList();
+  if(tabId==='tab-users') initUsersAdmin();
 }
 </script>
 </body>
