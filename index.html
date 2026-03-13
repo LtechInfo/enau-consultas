@@ -903,8 +903,7 @@ function handleFile(file) {
 function parseBatchCSV() {
   const raw = document.getElementById('csv-paste').value.trim();
   if(!raw){ showAlert('alert-batch','error','Nenhum dado para processar.'); return; }
-  const lines = raw.split('
-').filter(l=>l.trim());
+  const lines = raw.split('\n').filter(l=>l.trim());
   if(lines.length<2){ showAlert('alert-batch','error','O arquivo deve ter pelo menos cabeçalho + 1 linha.'); return; }
   const headers = lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/\s+/g,'_'));
   batchData = lines.slice(1).map(line => {
@@ -952,8 +951,7 @@ function confirmBatchImport() {
 function downloadTemplate() {
   const header='ra,nome,nascimento,curso,turma,turno,fase,tipo,nome_pai,nome_mae,nome_financeiro,nome_pedagogico,email_pedagogico,celular,fone_resid,fone_com';
   const sample='99999,NOME DO ALUNO,01/01/2015,Ensino Fundamental,EN_EF6_M_A,M,6,VETERANO,NOME DO PAI,NOME DA MAE,NOME FINANCEIRO,NOME PEDAGÓGICO,email@exemplo.com,(11)99999-9999,(11)4825-0000,';
-  const blob=new Blob([header+'
-'+sample],{type:'text/csv;charset=utf-8'});
+  const blob=new Blob([header+'\n'+sample],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modelo_importacao_enau.csv'; a.click();
 }
 
