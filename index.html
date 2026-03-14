@@ -411,6 +411,152 @@
     color: #fff;
   }
 
+  /* ─ UX REVIEW 2026: VISUAL SYSTEM + ACCESSIBILITY ─ */
+  :root {
+    --surface: var(--white);
+    --surface-alt: var(--g100);
+    --border: var(--g200);
+    --text-muted: var(--g500);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --space-1: 6px;
+    --space-2: 10px;
+    --space-3: 14px;
+    --space-4: 20px;
+    --space-5: 28px;
+    --focus-ring: 0 0 0 3px rgba(107,42,107,0.22);
+  }
+  *:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+  button, input, select, textarea { font: inherit; }
+  button { min-height: 40px; }
+
+  header {
+    height: 68px;
+    padding: 0 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .header-brand { gap: 10px; }
+  .header-brand-text h2 { font-size: 1.02rem; line-height: 1.05; }
+  .header-brand-text span { font-size: 0.74rem; color: rgba(255,255,255,0.66); }
+  .header-right { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .nav-btn, .logout-btn, .theme-toggle { border-radius: 999px; }
+  .nav-btn { padding: 7px 14px; font-weight: 600; min-height: 36px; }
+  .nav-btn.active {
+    background: rgba(201,74,58,0.25);
+    border-color: rgba(201,74,58,0.62);
+    color: #ffd5cf;
+  }
+  .nav-btn.inactive { color: rgba(255,255,255,0.85); }
+  .user-badge { padding: 5px 11px; }
+  .logout-btn { min-height: 36px; }
+
+  .page-kicker {
+    display: inline-block;
+    margin-bottom: 7px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--navy);
+    background: rgba(61,26,79,0.08);
+  }
+  .page-title { margin-bottom: 4px; }
+  .page-sub { margin-bottom: 22px; font-size: 0.86rem; }
+
+  .search-area, .form-card, .stat-card, .admin-tabs, .table-wrap, .admin-table-wrap, .batch-preview-wrap {
+    border: 1px solid var(--border);
+  }
+
+  .search-input, .filter-select, .clear-btn,
+  .form-group input, .form-group select, .admin-search-input, textarea,
+  .login-form input {
+    min-height: 44px;
+    border-radius: var(--radius-sm);
+  }
+  .search-input:focus, .filter-select:focus, .form-group input:focus,
+  .form-group select:focus, .admin-search-input:focus, .login-form input:focus,
+  textarea:focus {
+    box-shadow: var(--focus-ring);
+  }
+  .login-form input[aria-invalid="true"] {
+    border-color: #d04f66;
+    background: #fff4f6;
+  }
+
+  .table-wrap, .admin-table-wrap {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #results-table { min-width: 980px; }
+  .admin-table { min-width: 760px; }
+  thead th, .admin-table thead th { padding: 13px 14px; }
+  tbody td, .admin-table tbody td { padding: 12px 14px; line-height: 1.35; }
+  .td-nome { max-width: 280px; }
+
+  .admin-tabs {
+    width: 100%;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 7px;
+  }
+  .tab-btn {
+    white-space: nowrap;
+    min-height: 40px;
+    border: 1px solid transparent;
+  }
+  .tab-btn.active { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18); }
+  .form-card { padding: 24px; }
+  .form-actions { flex-wrap: wrap; }
+
+  .alert {
+    display: none;
+    align-items: flex-start;
+    gap: 8px;
+    border-radius: 10px;
+  }
+  .alert.success::before { content: "✓"; font-weight: 700; }
+  .alert.error::before { content: "!"; font-weight: 700; }
+
+  body.dark-theme .page-kicker {
+    color: #f0e7ff;
+    background: rgba(156,124,255,0.25);
+  }
+  body.dark-theme .search-area,
+  body.dark-theme .stat-card,
+  body.dark-theme .table-wrap,
+  body.dark-theme .modal,
+  body.dark-theme .parent-card,
+  body.dark-theme .admin-tabs,
+  body.dark-theme .form-card,
+  body.dark-theme .admin-table-wrap,
+  body.dark-theme .batch-preview-wrap {
+    border-color: #2a3041;
+  }
+  body.dark-theme .nav-btn.active {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.30);
+    color: #ffffff;
+  }
+  body.dark-theme .nav-btn.inactive {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.88);
+  }
+  body.dark-theme .login-form input[aria-invalid="true"] {
+    background: #2a1d28;
+    border-color: #cc6a84;
+  }
+  body.dark-theme .alert.success { background: #1f3327; color: #9be4b0; border-left-color: #5cbf7b; }
+  body.dark-theme .alert.error { background: #382327; color: #ffc0b9; border-left-color: #e07d72; }
+  body.dark-theme .tab-btn { color: #ced6ef; }
+  body.dark-theme .tab-btn:hover:not(.active) { background: #262b3b; color: #f3f5fb; }
+
   @media (max-width: 640px) {
     main, .admin-main { padding: 14px; }
     .search-row { flex-direction: column; }
@@ -422,6 +568,16 @@
     .login-hero { min-height: 208px; padding: 24px 20px 18px; }
     .login-form { padding: 24px 22px 16px; }
     .login-logo { width: 230px; margin-bottom: 18px; }
+    #results-table { min-width: 720px; }
+    .admin-table { min-width: 620px; }
+    #results-table th:nth-child(6),
+    #results-table td:nth-child(6),
+    #results-table th:nth-child(8),
+    #results-table td:nth-child(8) { display: none; }
+    #tab-list .admin-table th:nth-child(4),
+    #tab-list .admin-table td:nth-child(4) { display: none; }
+    .page-kicker { margin-bottom: 6px; }
+    .page-sub { margin-bottom: 18px; }
   }
 </style>
 </head>
@@ -468,8 +624,9 @@
     </div>
   </header>
   <main id="main-consulta">
+    <div class="page-kicker">Painel de Consulta</div>
     <h1 class="page-title">Consulta de Alunos</h1>
-    <p class="page-sub">Pesquise por nome, sobrenome, RA, turma ou responsável</p>
+    <p class="page-sub">Pesquise por nome, sobrenome, RA, turma ou responsável e abra a ficha completa do aluno</p>
     <div class="search-area">
       <div class="search-row">
         <div class="search-input-wrap" style="flex:2">
@@ -537,9 +694,10 @@
     </div>
   </header>
   <div class="admin-main">
+    <div class="page-kicker">Área Administrativa</div>
     <h1 class="page-title">Painel Administrativo</h1>
-    <p class="page-sub">Gerencie o cadastro de alunos</p>
-    <div class="admin-tabs">
+    <p class="page-sub">Gerencie alunos, usuários e importações com ações rápidas e feedback imediato</p>
+    <div class="admin-tabs" aria-label="Seções do painel administrativo">
       <button class="tab-btn active" onclick="switchTab('tab-list')">&#128203; Listar / Editar</button>
       <button class="tab-btn" onclick="switchTab('tab-add')">&#10133; Novo Aluno</button>
       <button class="tab-btn" onclick="switchTab('tab-batch')">&#128228; Importação em Lote</button>
