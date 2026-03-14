@@ -826,7 +826,7 @@
           <div class="section-sub">Cadastre, edite e remova acessos ao sistema</div>
           <div id="alert-users-list" class="alert"></div>
           <div class="admin-search-row">
-            <input class="admin-search-input" id="user-search" type="text" placeholder="Buscar por usuario ou nome..." oninput="renderUserList()"/>
+            <input class="admin-search-input" id="user-search" type="text" placeholder="Buscar por usuário ou nome..." oninput="renderUserList()"/>
           </div>
           <div class="admin-table-wrap">
             <table class="admin-table">
@@ -850,7 +850,7 @@
           <div class="form-actions">
             <button class="btn-primary" onclick="saveUser()" id="btn-save-user">Salvar Usuário</button>
             <button class="btn-secondary" onclick="clearUserForm()">Limpar</button>
-            <button class="btn-danger" onclick="clearUserForm()" id="btn-cancel-user-edit" style="display:none">Cancelar Edicao</button>
+            <button class="btn-danger" onclick="clearUserForm()" id="btn-cancel-user-edit" style="display:none">Cancelar Edição</button>
           </div>
         </div>
       </div>
@@ -946,22 +946,83 @@ function syncCurrentUserUI() {
   document.getElementById('btn-nav-admin').style.display = uinfo.role === 'admin' ? 'block' : 'none';
   if (uinfo.role !== 'admin') navTo('consulta');
 }
+function setNavButtonState(btnId, active) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.classList.toggle('active', active);
+  btn.classList.toggle('inactive', !active);
+}
+function updateNavState(dest) {
+  const consulta = dest !== 'admin';
+  setNavButtonState('btn-nav-consulta', consulta);
+  setNavButtonState('btn-nav-admin', !consulta);
+  setNavButtonState('btn-nav-consulta2', consulta);
+  setNavButtonState('btn-nav-admin2', !consulta);
+}
+function setupUIAccessibility() {
+  document.querySelectorAll('button:not([type])').forEach(btn => btn.type = 'button');
+  document.querySelectorAll('.alert').forEach(el => {
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+  });
+  const tabsWrap = document.querySelector('.admin-tabs');
+  if (tabsWrap) tabsWrap.setAttribute('role', 'tablist');
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', btn.classList.contains('active') ? 'true' : 'false');
+  });
+  document.querySelectorAll('.admin-panel').forEach(panel => panel.setAttribute('role', 'tabpanel'));
+  document.querySelectorAll('#results-table thead th[onclick]').forEach(th => {
+    th.tabIndex = 0;
+    th.setAttribute('role', 'button');
+    if (!th.dataset.kbdBound) {
+      th.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          th.click();
+        }
+      });
+      th.dataset.kbdBound = '1';
+    }
+  });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme(localStorage.getItem('enau_theme') || 'light');
   const saved = sessionStorage.getItem('enau_user');
   if (saved && USERS[saved]) { currentUser = saved; showApp(); }
   document.getElementById('input-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('input-user').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('f-curso').addEventListener('change', updateTurmaOptions);
+  setupUIAccessibility();
 });
 
 function doLogin() {
   const u = document.getElementById('input-user').value.trim().toLowerCase();
   const p = document.getElementById('input-pass').value;
   const err = document.getElementById('login-error');
+  const userInput = document.getElementById('input-user');
+  const passInput = document.getElementById('input-pass');
+  if (!u || !p) {
+    err.textContent = 'Informe usuário e senha para continuar.';
+    err.style.display='block';
+    userInput.setAttribute('aria-invalid', String(!u));
+    passInput.setAttribute('aria-invalid', String(!p));
+    (!u ? userInput : passInput).focus();
+    return;
+  }
   if (USERS[u] && USERS[u].pass === p) {
     currentUser = u; sessionStorage.setItem('enau_user', u); err.style.display='none'; showApp();
-  } else { err.style.display='block'; document.getElementById('input-pass').value=''; }
+    userInput.removeAttribute('aria-invalid');
+    passInput.removeAttribute('aria-invalid');
+  } else {
+    err.textContent = 'Usuário ou senha incorretos.';
+    err.style.display='block';
+    userInput.setAttribute('aria-invalid', 'true');
+    passInput.setAttribute('aria-invalid', 'true');
+    passInput.value='';
+    passInput.focus();
+  }
 }
 
 function doLogout() {
@@ -977,6 +1038,7 @@ function showApp() {
   document.getElementById('app-screen').style.display='flex';
   document.getElementById('admin-screen').style.display='none';
   syncCurrentUserUI();
+  updateNavState('consulta');
   initApp();
 }
 
@@ -985,11 +1047,13 @@ function navTo(dest) {
     if (USERS[currentUser].role !== 'admin') return;
     document.getElementById('app-screen').style.display='none';
     document.getElementById('admin-screen').style.display='flex';
+    updateNavState('admin');
     initAdminList();
     renderUserList();
   } else {
     document.getElementById('admin-screen').style.display='none';
     document.getElementById('app-screen').style.display='flex';
+    updateNavState('consulta');
     doSearch();
   }
 }
@@ -1078,6 +1142,16 @@ function render() {
   const start=(page-1)*PER_PAGE, slice=filtered.slice(start,start+PER_PAGE);
   document.getElementById('stat-results').textContent = total;
   const countEl = document.getElementById('results-count');
+  const sortMap = { nome:'th-nome', turma:'th-turma', nome_mae:'th-mae', nome_pai:'th-pai' };
+  document.querySelectorAll('#results-table thead th').forEach(th => {
+    th.classList.remove('sorted');
+    th.removeAttribute('aria-sort');
+  });
+  const activeSortHeader = document.getElementById(sortMap[sortField] || '');
+  if (activeSortHeader) {
+    activeSortHeader.classList.add('sorted');
+    activeSortHeader.setAttribute('aria-sort', sortAsc ? 'ascending' : 'descending');
+  }
   if(total===0) countEl.innerHTML='';
   else if(total===ALUNOS.length) countEl.innerHTML=`Exibindo <strong>todos os ${total} alunos</strong>`;
   else countEl.innerHTML=`<strong>${total}</strong> resultado${total>1?'s':''} encontrado${total>1?'s':''}`;
@@ -1089,7 +1163,7 @@ function render() {
     tbody.innerHTML=slice.map(a => {
       const idx=ALUNOS.indexOf(a);
       const phone = a.celular || a.fone_resid || '';
-      return `<tr onclick="openModal(${idx})">
+      return `<tr tabindex="0" role="button" aria-label="Abrir ficha do aluno" onclick="openModal(${idx})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openModal(${idx});}">
         <td class="td-nome">${hl(a.nome,q)}</td>
         <td><span class="td-turma">${fmtTurma(a.turma)}</span></td>
         <td>${cursoBadge(a.curso)}</td>
@@ -1169,7 +1243,10 @@ function openModal(idx) {
 }
 function closeModal(e) { if(e.target===document.getElementById('modal-overlay')) closeModalBtn(); }
 function closeModalBtn() { document.getElementById('modal-overlay').classList.remove('active'); document.body.style.overflow=''; }
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeModalBtn(); });
+document.addEventListener('keydown', e => {
+  const modalOpen = document.getElementById('modal-overlay').classList.contains('active');
+  if(e.key==='Escape' && modalOpen) closeModalBtn();
+});
 
 // ═══════════════════════════════
 // ADMIN — LIST
@@ -1481,16 +1558,22 @@ function downloadTemplate() {
 
 function showAlert(id, type, msg) {
   const el=document.getElementById(id);
-  el.className=`alert ${type}`; el.textContent=msg; el.style.display='block';
+  el.className=`alert ${type}`; el.textContent=msg; el.style.display='flex';
+  el.setAttribute('aria-atomic', 'true');
   setTimeout(()=>el.style.display='none', 4000);
 }
 
 function switchTab(tabId) {
   document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
   document.getElementById(tabId).classList.add('active');
   const idx=['tab-list','tab-add','tab-batch','tab-users'].indexOf(tabId);
-  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  const targetBtn = document.querySelectorAll('.tab-btn')[idx];
+  targetBtn.classList.add('active');
+  targetBtn.setAttribute('aria-selected', 'true');
   if(tabId==='tab-list') renderAdminList();
   if(tabId==='tab-users') initUsersAdmin();
 }
