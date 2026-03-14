@@ -9,17 +9,32 @@
   const APP_SESSION_KEY = cfg.APP_SESSION_KEY || "enau_app_session_v1";
   const AUTH_FUNCTION_NAME = cfg.AUTH_FUNCTION_NAME || "auth-username-login";
   const { createClient } = window.supabase;
+  const noStorage = {
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {},
+  };
+
+  function createAppClient(headers = {}) {
+    return createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY, {
+      global: { headers },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        storage: noStorage,
+      },
+    });
+  }
 
   let accessToken = null;
-  let supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY);
+  let supabase = createAppClient();
   let sessionUser = null;
   let usersLoaded = false;
 
   function rebindClient() {
     const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
-    supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY, {
-      global: { headers },
-    });
+    supabase = createAppClient(headers);
   }
 
   function persistSession() {
@@ -395,4 +410,3 @@
     bootstrap();
   }
 })();
-
