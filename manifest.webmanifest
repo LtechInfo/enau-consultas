@@ -1,0 +1,18 @@
+{
+  "name": "Colegio ENAU - Consulta de Alunos",
+  "short_name": "ENAU Consultas",
+  "description": "Sistema de consulta e gestao de alunos do Colegio ENAU.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fdf5ff",
+  "theme_color": "#3D1A4F",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "MOBILEICON.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
