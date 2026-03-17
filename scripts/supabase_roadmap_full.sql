@@ -284,6 +284,7 @@ $$;
 
 drop function if exists public.app_login(text, text);
 drop function if exists public.app_login(text, text, text);
+drop function if exists public.app_login(text, text, text, integer);
 create or replace function public.app_login(
   p_username text,
   p_password text,
@@ -324,8 +325,8 @@ begin
 
   select *
     into v_user
-  from public.app_users
-  where username = v_username
+  from public.app_users u
+  where u.username = v_username
   limit 1;
 
   if not found then
@@ -1460,4 +1461,6 @@ grant execute on function public.app_import_runs_list(uuid, integer) to anon, au
 grant execute on function public.app_import_run_report(uuid, uuid) to anon, authenticated;
 
 commit;
+
+
 
