@@ -95,7 +95,14 @@
   .login-form input:focus { border-color: #c983b9; background: #f8fbff; box-shadow: 0 0 0 3px rgba(201,131,185,0.14); }
   .login-btn { width: 100%; padding: 13px; background: #45215a; color: var(--white); border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: background 0.2s; }
   .login-btn:hover { background: #5a2d74; }
+  .login-btn.secondary { background: #7c6a88; margin-top: 10px; }
+  .login-btn.secondary:hover { background: #6e5c79; }
   .login-error { color: #8f2335; font-size: 0.83rem; margin-top: 14px; display: none; padding: 10px 12px; background: #fff2f4; border-radius: 8px; border-left: 3px solid #d04f66; text-align: left; }
+  .force-pass-box { margin-top: 6px; padding-top: 8px; border-top: 1px dashed #eadfec; display: none; }
+  .force-pass-box .kicker { font-size: 0.72rem; color: #5b3a75; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; margin-bottom: 10px; text-align: left; }
+  .force-pass-note { color: #7c617f; font-size: 0.8rem; text-align: left; margin-bottom: 12px; }
+  .force-pass-error { color: #8f2335; font-size: 0.82rem; margin-top: 10px; display: none; text-align: left; }
+  .login-main-fields.force-hidden { display: none; }
   .login-footer {
     border-top: 1px solid #eadfec;
     margin-top: 18px;
@@ -603,9 +610,20 @@
     <p class="subtitle">Sistema de Consulta de Alunos</p>
     </div>
     <div class="login-form">
-      <div><label>Usuário</label><input type="text" id="input-user" placeholder="Digite seu usuário" autocomplete="username"/></div>
-      <div><label>Senha</label><input type="password" id="input-pass" placeholder="Digite sua senha" autocomplete="current-password"/></div>
-      <button class="login-btn" onclick="doLogin()">Entrar</button>
+      <div id="login-main-fields" class="login-main-fields">
+        <div><label>Usuário</label><input type="text" id="input-user" placeholder="Digite seu usuário" autocomplete="username"/></div>
+        <div><label>Senha</label><input type="password" id="input-pass" placeholder="Digite sua senha" autocomplete="current-password"/></div>
+        <button class="login-btn" onclick="doLogin()">Entrar</button>
+      </div>
+      <div id="force-pass-box" class="force-pass-box">
+        <div class="kicker">Primeiro acesso</div>
+        <div class="force-pass-note">Para continuar, você precisa trocar a senha agora.</div>
+        <div><label>Nova senha</label><input type="password" id="force-new-pass" placeholder="Mínimo de 6 caracteres" autocomplete="new-password"/></div>
+        <div><label>Confirmar senha</label><input type="password" id="force-new-pass-2" placeholder="Repita a nova senha" autocomplete="new-password"/></div>
+        <button class="login-btn" onclick="submitForcedPasswordChange()">Atualizar senha</button>
+        <button class="login-btn secondary" onclick="cancelForcedPasswordChange()">Sair sem trocar</button>
+        <div class="force-pass-error" id="force-pass-error"></div>
+      </div>
       <div class="login-footer">Idealizado e desenvolvido por <strong>Lucas Martins</strong> · <strong>LTech Informática</strong> - 2026</div>
       <div class="login-error" id="login-error">Usuário ou senha incorretos.</div>
     </div>
@@ -917,6 +935,7 @@ let supabaseInitError = '';
 // ═══════════════════════════════
 let currentUser = null;
 let userPageMode = 'create';
+let pendingPasswordChange = null;
 
 function normalizeUsername(value) {
   return (value || '').trim().toLowerCase();
@@ -931,6 +950,41 @@ function clearLoginError() {
   const err = document.getElementById('login-error');
   if (!err) return;
   err.style.display = 'none';
+}
+function setForcePassError(message) {
+  const err = document.getElementById('force-pass-error');
+  if (!err) return;
+  err.textContent = message;
+  err.style.display = 'block';
+}
+function clearForcePassError() {
+  const err = document.getElementById('force-pass-error');
+  if (!err) return;
+  err.style.display = 'none';
+}
+function enterForcePasswordMode() {
+  const main = document.getElementById('login-main-fields');
+  const box = document.getElementById('force-pass-box');
+  if (main) main.classList.add('force-hidden');
+  if (box) box.style.display = 'block';
+  const p1 = document.getElementById('force-new-pass');
+  const p2 = document.getElementById('force-new-pass-2');
+  if (p1) p1.value = '';
+  if (p2) p2.value = '';
+  clearForcePassError();
+  clearLoginError();
+  if (p1) p1.focus();
+}
+function exitForcePasswordMode() {
+  const main = document.getElementById('login-main-fields');
+  const box = document.getElementById('force-pass-box');
+  if (main) main.classList.remove('force-hidden');
+  if (box) box.style.display = 'none';
+  const p1 = document.getElementById('force-new-pass');
+  const p2 = document.getElementById('force-new-pass-2');
+  if (p1) p1.value = '';
+  if (p2) p2.value = '';
+  clearForcePassError();
 }
 function isValidHttpUrl(value) {
   try {
@@ -1094,8 +1148,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(localStorage.getItem('enau_theme') || 'light');
   document.getElementById('input-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('input-user').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('force-new-pass').addEventListener('keydown', e => { if(e.key==='Enter') submitForcedPasswordChange(); });
+  document.getElementById('force-new-pass-2').addEventListener('keydown', e => { if(e.key==='Enter') submitForcedPasswordChange(); });
   document.getElementById('f-curso').addEventListener('change', updateTurmaOptions);
   setupUIAccessibility();
+  exitForcePasswordMode();
   const saved = sessionStorage.getItem(APP_SESSION_KEY);
   if (!saved) return;
   try {
@@ -1149,6 +1206,20 @@ async function doLogin() {
       name: row.full_name || u,
       role: row.role === 'admin' ? 'admin' : 'user'
     };
+    const mustChangePassword = row.must_change_password === true;
+    if (mustChangePassword) {
+      pendingPasswordChange = {
+        userId: currentUser.id,
+        username: currentUser.username,
+        oldPassword: p
+      };
+      userInput.removeAttribute('aria-invalid');
+      passInput.removeAttribute('aria-invalid');
+      passInput.value = '';
+      enterForcePasswordMode();
+      return;
+    }
+    pendingPasswordChange = null;
     persistCurrentUser();
     try {
       await refreshUsersState();
@@ -1175,7 +1246,64 @@ async function doLogin() {
   }
 }
 
+async function submitForcedPasswordChange() {
+  if (!pendingPasswordChange || !pendingPasswordChange.userId) {
+    doLogout();
+    setLoginError('Sua sessão expirou. Faça login novamente.');
+    return;
+  }
+  const newPass = document.getElementById('force-new-pass').value;
+  const confirmPass = document.getElementById('force-new-pass-2').value;
+  if (!newPass || !confirmPass) {
+    setForcePassError('Preencha e confirme a nova senha.');
+    return;
+  }
+  if (newPass.length < 6) {
+    setForcePassError('A nova senha deve ter no mínimo 6 caracteres.');
+    return;
+  }
+  if (newPass !== confirmPass) {
+    setForcePassError('As senhas não conferem.');
+    return;
+  }
+  if (newPass === pendingPasswordChange.oldPassword) {
+    setForcePassError('A nova senha deve ser diferente da senha atual.');
+    return;
+  }
+  try {
+    await callRpc('app_change_password_first_login', {
+      p_user_id: pendingPasswordChange.userId,
+      p_old_password: pendingPasswordChange.oldPassword,
+      p_new_password: newPass
+    });
+    pendingPasswordChange = null;
+    exitForcePasswordMode();
+    persistCurrentUser();
+    try {
+      await refreshUsersState();
+    } catch (_) {
+      USERS = {
+        [currentUser.username]: {
+          id: currentUser.id,
+          name: currentUser.name,
+          role: currentUser.role
+        }
+      };
+      usersLoaded = true;
+    }
+    showApp();
+  } catch (err) {
+    setForcePassError(explainRpcError(err));
+  }
+}
+
+function cancelForcedPasswordChange() {
+  doLogout();
+  setLoginError('Para acessar o sistema, é obrigatório trocar a senha no primeiro login.');
+}
+
 function doLogout() {
+  pendingPasswordChange = null;
   currentUser = null;
   persistCurrentUser();
   usersLoaded = false;
@@ -1183,6 +1311,7 @@ function doLogout() {
   document.getElementById('app-screen').style.display='none';
   document.getElementById('admin-screen').style.display='none';
   document.getElementById('input-user').value=''; document.getElementById('input-pass').value='';
+  exitForcePasswordMode();
   clearLoginError();
 }
 
@@ -1793,4 +1922,3 @@ function switchTab(tabId) {
 </script>
 </body>
 </html>
-
