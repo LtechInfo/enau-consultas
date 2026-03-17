@@ -809,13 +809,13 @@
     <div class="admin-panel" id="tab-batch">
       <div class="form-card">
         <div class="section-title">Importação em Lote</div>
-        <div class="section-sub">Importe vários alunos de uma vez via arquivo CSV ou cole os dados diretamente</div>
+        <div class="section-sub">Importe vários alunos de uma vez via arquivo CSV/XLS/XLSX ou cole os dados diretamente</div>
         <div id="alert-batch" class="alert"></div>
         <div class="batch-area" id="drop-zone">
           <div class="batch-icon">📄</div>
-          <h3>Arraste um arquivo CSV aqui</h3>
-          <p>ou clique para selecionar o arquivo<br><small>Colunas: ra, nome, nascimento, curso, turma, turno, fase, tipo, nome_pai, nome_mae, nome_financeiro, nome_pedagogico, email_pedagogico, celular, fone_resid, fone_com</small></p>
-          <label class="file-input-label">Selecionar Arquivo <input type="file" id="file-input" accept=".csv,.txt"/></label>
+          <h3>Arraste um arquivo CSV/XLS/XLSX aqui</h3>
+          <p>ou clique para selecionar o arquivo<br><small>Colunas padrão: ra, nome, nascimento, curso, turma, turno, fase, tipo, nome_pai, nome_mae, nome_financeiro, nome_pedagogico, email_pedagogico, celular, fone_resid, fone_com</small></p>
+          <label class="file-input-label">Selecionar Arquivo <input type="file" id="file-input" accept=".csv,.txt,.xls,.xlsx"/></label>
         </div>
         <div style="margin-bottom:16px">
           <div style="font-size:0.8rem;font-weight:600;color:var(--g700);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Ou cole o CSV aqui:</div>
@@ -896,6 +896,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ═══════════════════════════════
@@ -1824,6 +1825,144 @@ function cancelEdit() { clearForm(); }
 // ADMIN — BATCH
 // ═══════════════════════════════
 let batchData = [];
+const BATCH_COLUMN_ALIASES = {
+  ra: ['ra', 'ra_filho'],
+  nome: ['nome', 'nome_filho'],
+  nascimento: ['nascimento', 'data_nascimento'],
+  email_aluno: ['email_aluno', 'email_filho', 'email_instituicao_filho', 'email_instiuicao_filho'],
+  curso: ['curso'],
+  turma: ['turma'],
+  turno: ['turno'],
+  fase: ['fase'],
+  tipo: ['tipo', 'calouro_veterano'],
+  nome_pai: ['nome_pai'],
+  nome_mae: ['nome_mae'],
+  nome_financeiro: ['nome_financeiro', 'nome_fin'],
+  nome_pedagogico: ['nome_pedagogico', 'nome_ped'],
+  email_pedagogico: ['email_pedagogico', 'email_ped'],
+  celular: ['celular', 'cel', 'cel_mae', 'cel_pai'],
+  fone_resid: ['fone_resid', 'telefone_residencial'],
+  fone_com: ['fone_com', 'telefone_comercial']
+};
+
+function normalizeBatchKey(key) {
+  return (key || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+function valueToString(value) {
+  if (value === null || value === undefined) return '';
+  return String(value).trim();
+}
+function normalizeRa(value) {
+  return valueToString(value).replace(/\.0+$/, '');
+}
+function normalizeTurno(value) {
+  const v = valueToString(value).toUpperCase();
+  if (v === 'INTEGRAL') return 'MeV';
+  if (v === 'MATUTINO') return 'M';
+  if (v === 'VESPERTINO') return 'V';
+  return v || 'V';
+}
+function normalizeTipo(value) {
+  const v = valueToString(value).toUpperCase();
+  if (v.includes('CALOU')) return 'CALOURO';
+  if (v.includes('VETER')) return 'VETERANO';
+  return v || 'VETERANO';
+}
+function findByAliases(normalizedRow, aliases) {
+  for (const alias of aliases) {
+    const val = normalizedRow[alias];
+    if (valueToString(val)) return valueToString(val);
+  }
+  return '';
+}
+function normalizeImportedRow(rawRow) {
+  const normalized = {};
+  Object.entries(rawRow || {}).forEach(([key, value]) => {
+    normalized[normalizeBatchKey(key)] = valueToString(value);
+  });
+  const ra = normalizeRa(findByAliases(normalized, BATCH_COLUMN_ALIASES.ra));
+  const nome = findByAliases(normalized, BATCH_COLUMN_ALIASES.nome).toUpperCase();
+  const turma = findByAliases(normalized, BATCH_COLUMN_ALIASES.turma);
+  return {
+    ra,
+    nome,
+    nascimento: findByAliases(normalized, BATCH_COLUMN_ALIASES.nascimento),
+    email_aluno: findByAliases(normalized, BATCH_COLUMN_ALIASES.email_aluno),
+    curso: findByAliases(normalized, BATCH_COLUMN_ALIASES.curso),
+    turma,
+    turma_label: TURMA_LABELS[turma] || turma || '',
+    turno: normalizeTurno(findByAliases(normalized, BATCH_COLUMN_ALIASES.turno)),
+    fase: findByAliases(normalized, BATCH_COLUMN_ALIASES.fase),
+    tipo: normalizeTipo(findByAliases(normalized, BATCH_COLUMN_ALIASES.tipo)),
+    nome_pai: findByAliases(normalized, BATCH_COLUMN_ALIASES.nome_pai).toUpperCase(),
+    nome_mae: findByAliases(normalized, BATCH_COLUMN_ALIASES.nome_mae).toUpperCase(),
+    nome_financeiro: findByAliases(normalized, BATCH_COLUMN_ALIASES.nome_financeiro).toUpperCase(),
+    nome_pedagogico: findByAliases(normalized, BATCH_COLUMN_ALIASES.nome_pedagogico).toUpperCase(),
+    email_pedagogico: findByAliases(normalized, BATCH_COLUMN_ALIASES.email_pedagogico),
+    celular: findByAliases(normalized, BATCH_COLUMN_ALIASES.celular),
+    fone_resid: findByAliases(normalized, BATCH_COLUMN_ALIASES.fone_resid),
+    fone_com: findByAliases(normalized, BATCH_COLUMN_ALIASES.fone_com)
+  };
+}
+function parseCsvTextToObjects(raw) {
+  if (window.XLSX) {
+    const wb = XLSX.read(raw, { type: 'string' });
+    const sheetName = wb.SheetNames[0];
+    return XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '', raw: false });
+  }
+  const lines = raw.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const delimiter = (lines[0].split(';').length > lines[0].split(',').length) ? ';' : ',';
+  const headers = lines[0].split(delimiter).map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = line.split(delimiter);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] || '').trim(); });
+    return obj;
+  });
+}
+function parseImportedRows(rawRows) {
+  const mapped = (rawRows || [])
+    .map(normalizeImportedRow)
+    .filter(row => row.ra && row.nome);
+  const uniqueByRa = new Map();
+  mapped.forEach(row => uniqueByRa.set(row.ra, row));
+  batchData = [...uniqueByRa.values()];
+  if (!batchData.length) {
+    showAlert('alert-batch', 'error', 'Nenhuma linha válida encontrada (RA e Nome são obrigatórios).');
+    return;
+  }
+  const existingRa = new Set(ALUNOS.map(a => normalizeRa(a.ra)));
+  let willUpdate = 0;
+  let willAdd = 0;
+  batchData.forEach(row => {
+    if (existingRa.has(row.ra)) willUpdate++;
+    else willAdd++;
+  });
+  const previewCols = ['ra', 'nome', 'turma', 'celular'];
+  const th = previewCols.map(c => `<th>${c}</th>`).join('');
+  const trs = batchData.slice(0, 10).map(r => `<tr>${previewCols.map(c => `<td>${r[c] || '—'}</td>`).join('')}</tr>`).join('');
+  document.querySelector('#preview-table thead').innerHTML = `<tr>${th}</tr>`;
+  document.querySelector('#preview-table tbody').innerHTML = trs;
+  document.getElementById('batch-preview-title').textContent = `${batchData.length} aluno(s) prontos: ${willAdd} novo(s), ${willUpdate} atualização(ões) ${batchData.length > 10 ? '(mostrando 10 primeiros)' : ''}`;
+  document.getElementById('batch-preview').style.display = 'block';
+}
+function mergeAluno(existing, incoming) {
+  const merged = { ...existing };
+  Object.entries(incoming).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') merged[key] = value;
+  });
+  const turma = merged.turma || '';
+  merged.turma_label = TURMA_LABELS[turma] || turma || '';
+  return merged;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const dz = document.getElementById('drop-zone');
@@ -1838,50 +1977,82 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function handleFile(file) {
   if(!file) return;
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (ext === 'xls' || ext === 'xlsx') {
+    if (!window.XLSX) {
+      showAlert('alert-batch', 'error', 'Leitor XLS não carregado. Atualize a página e tente novamente.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array', raw: false });
+        const sheetName = wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '', raw: false });
+        parseImportedRows(rows);
+        showAlert('alert-batch', 'success', `Arquivo ${file.name} lido com sucesso.`);
+      } catch (err) {
+        showAlert('alert-batch', 'error', `Erro ao ler XLS: ${err.message || err}`);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    return;
+  }
   const reader = new FileReader();
-  reader.onload = e => { document.getElementById('csv-paste').value=e.target.result; parseBatchCSV(); };
+  reader.onload = e => {
+    document.getElementById('csv-paste').value = e.target.result || '';
+    parseBatchCSV();
+  };
   reader.readAsText(file, 'UTF-8');
 }
 
 function parseBatchCSV() {
   const raw = document.getElementById('csv-paste').value.trim();
   if(!raw){ showAlert('alert-batch','error','Nenhum dado para processar.'); return; }
-  const lines = raw.split('\n').filter(l=>l.trim());
-  if(lines.length<2){ showAlert('alert-batch','error','O arquivo deve ter pelo menos cabeçalho + 1 linha.'); return; }
-  const headers = lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/\s+/g,'_'));
-  batchData = lines.slice(1).map(line => {
-    const vals = line.split(',');
-    const obj = {};
-    headers.forEach((h,i)=>{ obj[h]=(vals[i]||'').trim(); });
-    return obj;
-  }).filter(o=>o.ra&&o.nome);
-  if(!batchData.length){ showAlert('alert-batch','error','Nenhuma linha válida encontrada (RA e Nome são obrigatórios).'); return; }
-  // Preview
-  const previewCols=['ra','nome','turma','celular'];
-  const th=previewCols.map(c=>`<th>${c}</th>`).join('');
-  const trs=batchData.slice(0,10).map(r=>`<tr>${previewCols.map(c=>`<td>${r[c]||'—'}</td>`).join('')}</tr>`).join('');
-  document.querySelector('#preview-table thead').innerHTML=`<tr>${th}</tr>`;
-  document.querySelector('#preview-table tbody').innerHTML=trs;
-  document.getElementById('batch-preview-title').textContent=`${batchData.length} aluno(s) para importar ${batchData.length>10?'(mostrando 10 primeiros)':''}`;
-  document.getElementById('batch-preview').style.display='block';
+  try {
+    const rows = parseCsvTextToObjects(raw);
+    if (!rows.length) {
+      showAlert('alert-batch', 'error', 'O conteúdo deve ter pelo menos cabeçalho + 1 linha.');
+      return;
+    }
+    parseImportedRows(rows);
+  } catch (err) {
+    showAlert('alert-batch', 'error', `Erro ao processar CSV: ${err.message || err}`);
+  }
 }
 
 function confirmBatchImport() {
-  let added=0, updated=0;
+  let added = 0;
+  let updated = 0;
   batchData.forEach(row => {
     const aluno = {
-      ra: row.ra||'', nome:(row.nome||'').toUpperCase(),
-      nascimento:row.nascimento||'', email_aluno:row.email_aluno||'',
-      curso:row.curso||'', turma:row.turma||'', turma_label:TURMA_LABELS[row.turma]||row.turma||'',
-      turno:row.turno||'V', fase:row.fase||'', tipo:(row.tipo||'VETERANO').toUpperCase(),
-      nome_pai:(row.nome_pai||'').toUpperCase(), nome_mae:(row.nome_mae||'').toUpperCase(),
-      nome_financeiro:(row.nome_financeiro||'').toUpperCase(),
-      nome_pedagogico:(row.nome_pedagogico||'').toUpperCase(),
-      email_pedagogico:row.email_pedagogico||'',
-      celular:row.celular||'', fone_resid:row.fone_resid||'', fone_com:row.fone_com||''
+      ra: normalizeRa(row.ra),
+      nome: (row.nome || '').toUpperCase(),
+      nascimento: row.nascimento || '',
+      email_aluno: row.email_aluno || '',
+      curso: row.curso || '',
+      turma: row.turma || '',
+      turma_label: TURMA_LABELS[row.turma] || row.turma || '',
+      turno: normalizeTurno(row.turno),
+      fase: row.fase || '',
+      tipo: normalizeTipo(row.tipo),
+      nome_pai: (row.nome_pai || '').toUpperCase(),
+      nome_mae: (row.nome_mae || '').toUpperCase(),
+      nome_financeiro: (row.nome_financeiro || '').toUpperCase(),
+      nome_pedagogico: (row.nome_pedagogico || '').toUpperCase(),
+      email_pedagogico: row.email_pedagogico || '',
+      celular: row.celular || '',
+      fone_resid: row.fone_resid || '',
+      fone_com: row.fone_com || ''
     };
-    const idx=ALUNOS.findIndex(a=>a.ra===aluno.ra);
-    if(idx>=0){ ALUNOS[idx]=aluno; updated++; } else { ALUNOS.push(aluno); added++; }
+    const idx = ALUNOS.findIndex(a => normalizeRa(a.ra) === aluno.ra);
+    if (idx >= 0) {
+      ALUNOS[idx] = mergeAluno(ALUNOS[idx], aluno);
+      updated++;
+    } else {
+      ALUNOS.push(aluno);
+      added++;
+    }
   });
   document.getElementById('batch-preview').style.display='none';
   document.getElementById('csv-paste').value='';
