@@ -25,14 +25,12 @@ const TURMAS_BY_CURSO = {
 const CONFIG = window.ENAU_CONFIG || {};
 const APP_STATE = window.ENAU_STATE || (window.ENAU_STATE = {});
 const UTILS = window.ENAU_UTILS || {};
-const SUPABASE_URL = String(CONFIG.SUPABASE_URL || '').trim();
-const SUPABASE_ANON_KEY = String(CONFIG.SUPABASE_ANON_KEY || '').trim();
+const API_BASE_URL = String(CONFIG.API_BASE_URL || '/api').trim().replace(/\/+$/, '') || '/api';
+const API_TIMEOUT_MS = Number(CONFIG.API_TIMEOUT_MS || 15000);
 const APP_SESSION_KEY = CONFIG.APP_SESSION_KEY || 'enau_user';
 const PASSWORD_MIN_LENGTH = Number(CONFIG.PASSWORD_MIN_LENGTH || 8);
 USERS = {};
-let supabaseClient = null;
 let usersLoaded = false;
-let supabaseInitError = '';
 
 // ═══════════════════════════════
 // AUTH
@@ -96,50 +94,74 @@ function exitForcePasswordMode() {
   if (p2) p2.value = '';
   clearForcePassError();
 }
-function isValidHttpUrl(value) {
-  try {
-    const u = new URL(value);
-    return u.protocol === 'https:' || u.protocol === 'http:';
-  } catch (_) {
-    return false;
-  }
-}
-function supabaseConfigured() {
-  return (
-    isValidHttpUrl(SUPABASE_URL) &&
-    SUPABASE_URL &&
-    SUPABASE_ANON_KEY &&
-    !SUPABASE_URL.includes('COLE_SEU_SUPABASE_URL') &&
-    !SUPABASE_ANON_KEY.includes('COLE_SUA_SUPABASE_ANON_KEY')
-  );
-}
-function getSupabaseClient() {
-  if (supabaseClient) return supabaseClient;
-  if (!window.supabase || typeof window.supabase.createClient !== 'function') return null;
-  if (!supabaseConfigured()) {
-    supabaseInitError = 'SUPABASE_URL inválida. Use o formato: https://SEU-PROJECT-REF.supabase.co';
-    return null;
-  }
-  try {
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false
-      }
-    });
-  } catch (err) {
-    supabaseInitError = err?.message || 'Falha ao iniciar cliente Supabase.';
-    return null;
-  }
-  return supabaseClient;
-}
 async function callRpc(functionName, params = {}) {
-  const client = getSupabaseClient();
-  if (!client) throw new Error(supabaseInitError || 'Configure SUPABASE_URL e SUPABASE_ANON_KEY em js/config.js.');
-  const { data, error } = await client.rpc(functionName, params);
-  if (error) throw error;
-  return data;
+  const endpointWithFunction = `${API_BASE_URL}/rpc/${encodeURIComponent(functionName)}`;
+  const endpointGeneric = `${API_BASE_URL}/rpc`;
+  const endpoints = [endpointWithFunction, endpointGeneric];
+  let lastError = null;
+
+  for (let i = 0; i < endpoints.length; i++) {
+    const endpoint = endpoints[i];
+    const isGenericEndpoint = endpoint === endpointGeneric;
+    const body = isGenericEndpoint
+      ? { function_name: functionName, params }
+      : { params };
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body),
+        credentials: 'include',
+        signal: controller.signal
+      });
+
+      const text = await response.text();
+      let payload = null;
+      if (text) {
+        try {
+          payload = JSON.parse(text);
+        } catch (_) {
+          payload = null;
+        }
+      }
+
+      if (!response.ok) {
+        const shouldTryGeneric = response.status === 404 && !isGenericEndpoint;
+        const message = payload?.error || payload?.message || `Falha HTTP ${response.status} ao chamar ${functionName}.`;
+        const err = new Error(message);
+        err.status = response.status;
+        err.payload = payload;
+        lastError = err;
+        if (shouldTryGeneric) continue;
+        throw err;
+      }
+
+      if (payload?.error) {
+        throw new Error(payload.error);
+      }
+
+      if (payload && Object.prototype.hasOwnProperty.call(payload, 'data')) {
+        return payload.data;
+      }
+      return payload;
+    } catch (err) {
+      if (err?.name === 'AbortError') {
+        lastError = new Error(`Timeout ao chamar ${functionName}.`);
+      } else {
+        lastError = err;
+      }
+      if (i === endpoints.length - 1) throw lastError;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  throw lastError || new Error(`Falha ao chamar ${functionName}.`);
 }
 function parseRpcNumber(value, fallback = 0) {
   if (value === null || value === undefined) return fallback;
@@ -287,8 +309,14 @@ async function loadRecentImports() {
 }
 function explainRpcError(err) {
   const raw = err?.message || err?.details || String(err || 'Erro desconhecido.');
-  if (/function .* does not exist|schema cache/i.test(raw)) {
-    return 'Funções SQL do Supabase não encontradas. Rode o arquivo scripts/supabase_roadmap_full.sql no SQL Editor.';
+  if (/failed to fetch|networkerror|econnrefused|getaddrinfo|fetch/i.test(raw)) {
+    return 'Não foi possível conectar ao backend local. Verifique se a API está ativa e a configuração API_BASE_URL em js/config.js.';
+  }
+  if (/timeout/i.test(raw)) {
+    return 'A API local demorou para responder. Tente novamente.';
+  }
+  if (/function .* does not exist|not found|schema/i.test(raw)) {
+    return 'Função de backend não encontrada. Verifique os endpoints locais /api/rpc.';
   }
   if (/Sessão inválida ou expirada/i.test(raw)) {
     doLogout();
@@ -498,10 +526,6 @@ async function doLogin() {
     userInput.setAttribute('aria-invalid', String(!u));
     passInput.setAttribute('aria-invalid', String(!p));
     (!u ? userInput : passInput).focus();
-    return;
-  }
-  if (!getSupabaseClient()) {
-    setLoginError(supabaseInitError || 'Configure SUPABASE_URL e SUPABASE_ANON_KEY em js/config.js antes de fazer login.');
     return;
   }
   try {
