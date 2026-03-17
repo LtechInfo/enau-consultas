@@ -851,7 +851,7 @@
           <div class="form-grid">
             <div class="form-group"><label>Usuário *</label><input id="u-username" type="text" placeholder="Ex: secretaria"/></div>
             <div class="form-group"><label>Nome *</label><input id="u-name" type="text" placeholder="Nome exibido no sistema"/></div>
-            <div class="form-group"><label>Senha *</label><input id="u-pass" type="text" placeholder="Defina uma senha"/></div>
+            <div class="form-group"><label>Senha *</label><input id="u-pass" type="password" placeholder="Defina uma senha"/></div>
             <div class="form-group"><label>Perfil *</label><select id="u-role"><option value="user">Usuário</option><option value="admin">Administrador</option></select></div>
           </div>
           <div class="form-actions">
@@ -877,6 +877,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ═══════════════════════════════
 // DATA
@@ -902,13 +903,12 @@ const TURMAS_BY_CURSO = {
   'Período Complementar':['EN_COMPLEMENTA','EN_COMP_AVULSO']
 };
 
-const DEFAULT_USERS = {
-  'enau':    {pass:'enau2026',   name:'Secretaria ENAU', role:'user'},
-  'coord':   {pass:'coord2026',  name:'Coordenação',     role:'user'},
-  'direcao': {pass:'direcao2026',name:'Direção',         role:'user'},
-  'admin':   {pass:'admin123',   name:'Administrador',   role:'admin'}
-};
-USERS = loadUsers();
+const SUPABASE_URL = 'COLE_SEU_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'COLE_SUA_SUPABASE_ANON_KEY';
+const APP_SESSION_KEY = 'enau_user';
+USERS = {};
+let supabaseClient = null;
+let usersLoaded = false;
 
 // ═══════════════════════════════
 // AUTH
@@ -916,16 +916,80 @@ USERS = loadUsers();
 let currentUser = null;
 let userPageMode = 'create';
 
-function loadUsers() {
-  try {
-    const saved = localStorage.getItem('enau_users');
-    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_USERS));
-  } catch (_) {
-    return JSON.parse(JSON.stringify(DEFAULT_USERS));
-  }
+function normalizeUsername(value) {
+  return (value || '').trim().toLowerCase();
 }
-function saveUsersStore() {
-  localStorage.setItem('enau_users', JSON.stringify(USERS));
+function setLoginError(message) {
+  const err = document.getElementById('login-error');
+  if (!err) return;
+  err.textContent = message;
+  err.style.display = 'block';
+}
+function clearLoginError() {
+  const err = document.getElementById('login-error');
+  if (!err) return;
+  err.style.display = 'none';
+}
+function supabaseConfigured() {
+  return (
+    SUPABASE_URL &&
+    SUPABASE_ANON_KEY &&
+    !SUPABASE_URL.includes('COLE_SEU_SUPABASE_URL') &&
+    !SUPABASE_ANON_KEY.includes('COLE_SUA_SUPABASE_ANON_KEY')
+  );
+}
+function getSupabaseClient() {
+  if (supabaseClient) return supabaseClient;
+  if (!window.supabase || typeof window.supabase.createClient !== 'function') return null;
+  if (!supabaseConfigured()) return null;
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false
+    }
+  });
+  return supabaseClient;
+}
+async function callRpc(functionName, params = {}) {
+  const client = getSupabaseClient();
+  if (!client) throw new Error('Configure SUPABASE_URL e SUPABASE_ANON_KEY no index.html.');
+  const { data, error } = await client.rpc(functionName, params);
+  if (error) throw error;
+  return data;
+}
+function mapDbUsers(rows) {
+  const mapped = {};
+  (rows || []).forEach(row => {
+    const username = normalizeUsername(row.username);
+    if (!username) return;
+    mapped[username] = {
+      id: row.id,
+      name: row.full_name || row.name || username,
+      role: row.role === 'admin' ? 'admin' : 'user'
+    };
+  });
+  return mapped;
+}
+async function refreshUsersState() {
+  const rows = await callRpc('app_list_users');
+  USERS = mapDbUsers(rows);
+  usersLoaded = true;
+  return USERS;
+}
+function explainRpcError(err) {
+  const raw = err?.message || err?.details || String(err || 'Erro desconhecido.');
+  if (/function .* does not exist|schema cache/i.test(raw)) {
+    return 'Funções SQL do Supabase não encontradas. Rode o script SQL que eu te enviei para login/usuários.';
+  }
+  return raw;
+}
+function persistCurrentUser() {
+  if (currentUser) {
+    sessionStorage.setItem(APP_SESSION_KEY, JSON.stringify(currentUser));
+  } else {
+    sessionStorage.removeItem(APP_SESSION_KEY);
+  }
 }
 function applyTheme(theme) {
   const dark = theme === 'dark';
@@ -943,14 +1007,27 @@ function toggleTheme() {
   applyTheme(document.body.classList.contains('dark-theme') ? 'light' : 'dark');
 }
 function syncCurrentUserUI() {
-  const uinfo = USERS[currentUser];
+  if (!currentUser) {
+    doLogout();
+    return;
+  }
+  const uinfo = USERS[currentUser.username] || currentUser;
   if (!uinfo) {
     doLogout();
     return;
   }
+  currentUser = {
+    ...currentUser,
+    id: uinfo.id || currentUser.id || null,
+    username: currentUser.username,
+    name: uinfo.name || currentUser.name,
+    role: uinfo.role || currentUser.role || 'user'
+  };
+  persistCurrentUser();
   document.getElementById('user-name-badge').textContent = uinfo.name;
   document.getElementById('user-name-badge2').textContent = uinfo.name;
   document.getElementById('btn-nav-admin').style.display = uinfo.role === 'admin' ? 'block' : 'none';
+  document.getElementById('btn-nav-admin2').style.display = uinfo.role === 'admin' ? 'block' : 'none';
   if (uinfo.role !== 'admin') navTo('consulta');
 }
 function setNavButtonState(btnId, active) {
@@ -994,50 +1071,100 @@ function setupUIAccessibility() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(localStorage.getItem('enau_theme') || 'light');
-  const saved = sessionStorage.getItem('enau_user');
-  if (saved && USERS[saved]) { currentUser = saved; showApp(); }
   document.getElementById('input-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('input-user').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('f-curso').addEventListener('change', updateTurmaOptions);
   setupUIAccessibility();
+  const saved = sessionStorage.getItem(APP_SESSION_KEY);
+  if (!saved) return;
+  try {
+    const parsed = JSON.parse(saved);
+    if (!parsed || !parsed.username) throw new Error('Sessão inválida');
+    currentUser = {
+      id: parsed.id || null,
+      username: normalizeUsername(parsed.username),
+      name: parsed.name || parsed.username,
+      role: parsed.role === 'admin' ? 'admin' : 'user'
+    };
+    await refreshUsersState();
+    if (!USERS[currentUser.username]) throw new Error('Usuário não encontrado');
+    showApp();
+  } catch (_) {
+    doLogout();
+    setLoginError('Sessão encerrada. Faça login novamente.');
+  }
 });
 
-function doLogin() {
-  const u = document.getElementById('input-user').value.trim().toLowerCase();
+async function doLogin() {
+  const u = normalizeUsername(document.getElementById('input-user').value);
   const p = document.getElementById('input-pass').value;
-  const err = document.getElementById('login-error');
   const userInput = document.getElementById('input-user');
   const passInput = document.getElementById('input-pass');
   if (!u || !p) {
-    err.textContent = 'Informe usuário e senha para continuar.';
-    err.style.display='block';
+    setLoginError('Informe usuário e senha para continuar.');
     userInput.setAttribute('aria-invalid', String(!u));
     passInput.setAttribute('aria-invalid', String(!p));
     (!u ? userInput : passInput).focus();
     return;
   }
-  if (USERS[u] && USERS[u].pass === p) {
-    currentUser = u; sessionStorage.setItem('enau_user', u); err.style.display='none'; showApp();
+  if (!getSupabaseClient()) {
+    setLoginError('Configure SUPABASE_URL e SUPABASE_ANON_KEY no index.html antes de fazer login.');
+    return;
+  }
+  try {
+    const result = await callRpc('app_login', { p_username: u, p_password: p });
+    const row = Array.isArray(result) ? result[0] : result;
+    if (!row || !row.ok) {
+      setLoginError('Usuário ou senha incorretos.');
+      userInput.setAttribute('aria-invalid', 'true');
+      passInput.setAttribute('aria-invalid', 'true');
+      passInput.value = '';
+      passInput.focus();
+      return;
+    }
+    currentUser = {
+      id: row.user_id || null,
+      username: normalizeUsername(row.username || u),
+      name: row.full_name || u,
+      role: row.role === 'admin' ? 'admin' : 'user'
+    };
+    persistCurrentUser();
+    try {
+      await refreshUsersState();
+    } catch (_) {
+      USERS = {
+        [currentUser.username]: {
+          id: currentUser.id,
+          name: currentUser.name,
+          role: currentUser.role
+        }
+      };
+      usersLoaded = true;
+    }
+    clearLoginError();
+    showApp();
     userInput.removeAttribute('aria-invalid');
     passInput.removeAttribute('aria-invalid');
-  } else {
-    err.textContent = 'Usuário ou senha incorretos.';
-    err.style.display='block';
+  } catch (err) {
+    setLoginError(explainRpcError(err));
     userInput.setAttribute('aria-invalid', 'true');
     passInput.setAttribute('aria-invalid', 'true');
-    passInput.value='';
+    passInput.value = '';
     passInput.focus();
   }
 }
 
 function doLogout() {
-  sessionStorage.removeItem('enau_user'); currentUser = null;
+  currentUser = null;
+  persistCurrentUser();
+  usersLoaded = false;
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app-screen').style.display='none';
   document.getElementById('admin-screen').style.display='none';
   document.getElementById('input-user').value=''; document.getElementById('input-pass').value='';
+  clearLoginError();
 }
 
 function showApp() {
@@ -1051,12 +1178,12 @@ function showApp() {
 
 function navTo(dest) {
   if (dest === 'admin') {
-    if (USERS[currentUser].role !== 'admin') return;
+    if (!currentUser || currentUser.role !== 'admin') return;
     document.getElementById('app-screen').style.display='none';
     document.getElementById('admin-screen').style.display='flex';
     updateNavState('admin');
     initAdminList();
-    renderUserList();
+    void renderUserList();
   } else {
     document.getElementById('admin-screen').style.display='none';
     document.getElementById('app-screen').style.display='flex';
@@ -1261,8 +1388,8 @@ document.addEventListener('keydown', e => {
 let adminPage = 1;
 const ADMIN_PER = 20;
 
-function initAdminList() { renderAdminList(); renderUserList(); }
-function initUsersAdmin() { renderUserList(); clearUserForm(); }
+function initAdminList() { renderAdminList(); void renderUserList(); }
+function initUsersAdmin() { void renderUserList(); clearUserForm(); }
 
 function renderAdminList() {
   const q = norm(document.getElementById('admin-search').value.trim());
@@ -1297,27 +1424,41 @@ function renderAdminList() {
 }
 function adminGoPage(p){ adminPage=p; renderAdminList(); }
 
-function renderUserList() {
+async function renderUserList() {
   const body = document.getElementById('users-table-body');
   if (!body) return;
+  if (!usersLoaded) {
+    try {
+      await refreshUsersState();
+    } catch (err) {
+      showAlert('alert-users-list', 'error', explainRpcError(err));
+      body.innerHTML = '';
+      return;
+    }
+  }
   const q = norm((document.getElementById('user-search')?.value || '').trim());
   const entries = Object.entries(USERS)
     .filter(([username, user]) => !q || norm(username).includes(q) || norm(user.name).includes(q))
     .sort((a, b) => a[0].localeCompare(b[0], 'pt'));
+  if (!entries.length) {
+    body.innerHTML = '<tr><td colspan="4" style="color:var(--g500)">Nenhum usuário encontrado.</td></tr>';
+    return;
+  }
   body.innerHTML = entries.map(([username, user]) => `
     <tr>
       <td><strong>${username}</strong></td>
       <td>${user.name}</td>
       <td>${user.role === 'admin' ? 'Administrador' : 'Usuário'}</td>
       <td>
-        <button class="edit-row-btn" onclick="editUser('${username}')">Editar</button>
-        <button class="del-row-btn" onclick="deleteUser('${username}')">Excluir</button>
+        <button class="edit-row-btn" onclick="editUser('${encodeURIComponent(username)}')">Editar</button>
+        <button class="del-row-btn" onclick="deleteUser('${encodeURIComponent(username)}')">Excluir</button>
       </td>
     </tr>
   `).join('');
 }
 
-function editUser(username) {
+function editUser(encodedUsername) {
+  const username = decodeURIComponent(encodedUsername);
   const user = USERS[username];
   if (!user) return;
   switchTab('tab-users');
@@ -1325,7 +1466,8 @@ function editUser(username) {
   document.getElementById('u-username').value = username;
   document.getElementById('u-username').disabled = true;
   document.getElementById('u-name').value = user.name;
-  document.getElementById('u-pass').value = user.pass;
+  document.getElementById('u-pass').value = '';
+  document.getElementById('u-pass').placeholder = 'Deixe em branco para manter a senha atual';
   document.getElementById('u-role').value = user.role;
   document.getElementById('btn-save-user').setAttribute('data-edit-username', username);
   document.getElementById('btn-save-user').textContent = 'Atualizar Usuário';
@@ -1337,6 +1479,7 @@ function editUser(username) {
 function clearUserForm() {
   userPageMode = 'create';
   ['u-username', 'u-name', 'u-pass'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('u-pass').placeholder = 'Defina uma senha';
   document.getElementById('u-role').value = 'user';
   document.getElementById('u-username').disabled = false;
   document.getElementById('btn-save-user').removeAttribute('data-edit-username');
@@ -1346,41 +1489,85 @@ function clearUserForm() {
   document.getElementById('user-form-sub').textContent = 'Defina login, nome, senha e perfil de acesso';
 }
 
-function saveUser() {
-  const username = document.getElementById('u-username').value.trim().toLowerCase();
+async function saveUser() {
+  const username = normalizeUsername(document.getElementById('u-username').value);
   const name = document.getElementById('u-name').value.trim();
   const pass = document.getElementById('u-pass').value.trim();
   const role = document.getElementById('u-role').value;
   const editing = document.getElementById('btn-save-user').getAttribute('data-edit-username');
-  if (!username || !name || !pass || !role) {
-    showAlert('alert-users-form', 'error', 'Usuário, nome, senha e perfil são obrigatórios.');
+  if (!username || !name || !role) {
+    showAlert('alert-users-form', 'error', 'Usuário, nome e perfil são obrigatórios.');
     return;
   }
-  if (!editing && USERS[username]) {
-    showAlert('alert-users-form', 'error', `O usuário ${username} já existe.`);
+  if (!getSupabaseClient()) {
+    showAlert('alert-users-form', 'error', 'Configure SUPABASE_URL e SUPABASE_ANON_KEY no index.html.');
     return;
   }
-  const targetKey = editing || username;
-  USERS[targetKey] = { name, pass, role };
-  saveUsersStore();
-  clearUserForm();
-  renderUserList();
-  if (targetKey === currentUser) syncCurrentUserUI();
-  showAlert('alert-users-form', 'success', editing ? 'Usuário atualizado com sucesso.' : 'Usuário cadastrado com sucesso.');
+  try {
+    if (!usersLoaded) await refreshUsersState();
+    if (!editing) {
+      if (!pass) {
+        showAlert('alert-users-form', 'error', 'Senha é obrigatória para novo usuário.');
+        return;
+      }
+      if (USERS[username]) {
+        showAlert('alert-users-form', 'error', `O usuário ${username} já existe.`);
+        return;
+      }
+      await callRpc('app_create_user', {
+        p_username: username,
+        p_password: pass,
+        p_full_name: name,
+        p_role: role
+      });
+    } else {
+      const user = USERS[editing];
+      if (!user) {
+        showAlert('alert-users-form', 'error', 'Usuário não encontrado para edição.');
+        return;
+      }
+      await callRpc('app_update_user', {
+        p_user_id: user.id,
+        p_full_name: name,
+        p_role: role,
+        p_new_password: pass || null
+      });
+    }
+    await refreshUsersState();
+    clearUserForm();
+    await renderUserList();
+    const targetKey = editing || username;
+    if (currentUser && targetKey === currentUser.username) {
+      const me = USERS[targetKey];
+      if (me) {
+        currentUser = { ...currentUser, id: me.id, name: me.name, role: me.role };
+        persistCurrentUser();
+      }
+      syncCurrentUserUI();
+    }
+    showAlert('alert-users-form', 'success', editing ? 'Usuário atualizado com sucesso.' : 'Usuário cadastrado com sucesso.');
+  } catch (err) {
+    showAlert('alert-users-form', 'error', explainRpcError(err));
+  }
 }
 
-function deleteUser(username) {
+async function deleteUser(encodedUsername) {
+  const username = decodeURIComponent(encodedUsername);
   if (!USERS[username]) return;
-  if (username === currentUser) {
+  if (currentUser && username === currentUser.username) {
     showAlert('alert-users-list', 'error', 'Você não pode excluir o usuário atualmente logado.');
     return;
   }
   if (!confirm(`Excluir o usuário ${username}?`)) return;
-  delete USERS[username];
-  saveUsersStore();
-  renderUserList();
-  clearUserForm();
-  showAlert('alert-users-list', 'success', 'Usuário excluído com sucesso.');
+  try {
+    await callRpc('app_delete_user', { p_user_id: USERS[username].id });
+    await refreshUsersState();
+    await renderUserList();
+    clearUserForm();
+    showAlert('alert-users-list', 'success', 'Usuário excluído com sucesso.');
+  } catch (err) {
+    showAlert('alert-users-list', 'error', explainRpcError(err));
+  }
 }
 
 function editAluno(idx) {
