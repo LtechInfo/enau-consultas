@@ -25,8 +25,8 @@ const TURMAS_BY_CURSO = {
 const CONFIG = window.ENAU_CONFIG || {};
 const APP_STATE = window.ENAU_STATE || (window.ENAU_STATE = {});
 const UTILS = window.ENAU_UTILS || {};
-const SUPABASE_URL = CONFIG.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = CONFIG.SUPABASE_ANON_KEY || '';
+const SUPABASE_URL = String(CONFIG.SUPABASE_URL || '').trim();
+const SUPABASE_ANON_KEY = String(CONFIG.SUPABASE_ANON_KEY || '').trim();
 const APP_SESSION_KEY = CONFIG.APP_SESSION_KEY || 'enau_user';
 const PASSWORD_MIN_LENGTH = Number(CONFIG.PASSWORD_MIN_LENGTH || 8);
 USERS = {};
@@ -507,9 +507,7 @@ async function doLogin() {
   try {
     const result = await callRpc('app_login', {
       p_username: u,
-      p_password: p,
-      p_origin: navigator.userAgent || 'browser',
-      p_session_hours: Number(CONFIG.SESSION_TTL_HOURS || 12)
+      p_password: p
     });
     const row = Array.isArray(result) ? result[0] : result;
     if (!row || !row.ok) {
