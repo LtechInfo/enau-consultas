@@ -27,6 +27,9 @@ const APP_STATE = window.ENAU_STATE || (window.ENAU_STATE = {});
 const UTILS = window.ENAU_UTILS || {};
 const API_BASE_URL = String(CONFIG.API_BASE_URL || '/api').trim().replace(/\/+$/, '') || '/api';
 const API_TIMEOUT_MS = Number(CONFIG.API_TIMEOUT_MS || 15000);
+const CURRENT_HOSTNAME = String(window.location?.hostname || '').toLowerCase();
+const IS_GITHUB_PAGES = CURRENT_HOSTNAME.endsWith('.github.io');
+const API_BASE_IS_RELATIVE = API_BASE_URL.startsWith('/');
 const APP_SESSION_KEY = CONFIG.APP_SESSION_KEY || 'enau_user';
 const PASSWORD_MIN_LENGTH = Number(CONFIG.PASSWORD_MIN_LENGTH || 8);
 USERS = {};
@@ -94,7 +97,15 @@ function exitForcePasswordMode() {
   if (p2) p2.value = '';
   clearForcePassError();
 }
+function ensureApiBaseUrlForHost() {
+  if (IS_GITHUB_PAGES && API_BASE_IS_RELATIVE) {
+    throw new Error(
+      'GitHub Pages não executa backend. Defina ENAU_CONFIG.API_BASE_URL com a URL pública da sua API (ex.: http://SEU-WINDOWS-SERVER:3000/api).'
+    );
+  }
+}
 async function callRpc(functionName, params = {}) {
+  ensureApiBaseUrlForHost();
   const endpointWithFunction = `${API_BASE_URL}/rpc/${encodeURIComponent(functionName)}`;
   const endpointGeneric = `${API_BASE_URL}/rpc`;
   const endpoints = [endpointWithFunction, endpointGeneric];
@@ -155,6 +166,7 @@ async function callRpc(functionName, params = {}) {
       } else {
         lastError = err;
       }
+      if (err?.status && err.status !== 404) throw lastError;
       if (i === endpoints.length - 1) throw lastError;
     } finally {
       clearTimeout(timeoutId);
@@ -309,6 +321,12 @@ async function loadRecentImports() {
 }
 function explainRpcError(err) {
   const raw = err?.message || err?.details || String(err || 'Erro desconhecido.');
+  if (err?.status === 405 || /Falha HTTP 405/i.test(raw)) {
+    return 'A API respondeu 405 (método não permitido). Verifique se seu backend local aceita POST nas rotas /api/rpc.';
+  }
+  if (/GitHub Pages não executa backend/i.test(raw)) {
+    return raw;
+  }
   if (/failed to fetch|networkerror|econnrefused|getaddrinfo|fetch/i.test(raw)) {
     return 'Não foi possível conectar ao backend local. Verifique se a API está ativa e a configuração API_BASE_URL em js/config.js.';
   }
