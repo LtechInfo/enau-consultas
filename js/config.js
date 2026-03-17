@@ -1,0 +1,10 @@
+﻿window.ENAU_CONFIG = Object.assign(
+  {
+    SUPABASE_URL: 'COLE_SEU_SUPABASE_URL_AQUI',
+    SUPABASE_ANON_KEY: 'COLE_SUA_SUPABASE_ANON_KEY_AQUI',
+    APP_SESSION_KEY: 'enau_user',
+    PASSWORD_MIN_LENGTH: 8,
+    SESSION_TTL_HOURS: 12
+  },
+  window.ENAU_CONFIG || {}
+);
