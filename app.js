@@ -977,6 +977,87 @@ function adminGoPage(p){
   adminPage=p;
   void renderAdminList();
 }
+function toggleBatchDeleteBox() {
+  const box = document.getElementById('batch-delete-box');
+  if (!box) return;
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+function clearBatchDeleteBox() {
+  const ta = document.getElementById('batch-delete-ras');
+  if (ta) ta.value = '';
+}
+function parseBatchDeleteRas(raw) {
+  const text = String(raw || '');
+  const tokens = text
+    .split(/[\n,;\t ]+/g)
+    .map(v => normalizeRa(v))
+    .filter(v => !!v);
+  const dedup = [];
+  const seen = new Set();
+  tokens.forEach(ra => {
+    if (seen.has(ra)) return;
+    seen.add(ra);
+    dedup.push(ra);
+  });
+  return dedup;
+}
+async function deleteStudentsInBatch() {
+  if (!currentUser?.sessionToken || currentUser.role !== 'admin') {
+    showAlert('alert-list', 'error', 'Apenas administrador pode excluir alunos.');
+    return;
+  }
+  const raw = document.getElementById('batch-delete-ras')?.value || '';
+  const ras = parseBatchDeleteRas(raw);
+  if (!ras.length) {
+    showAlert('alert-list', 'error', 'Informe pelo menos 1 RA para exclusão em lote.');
+    return;
+  }
+  if (!confirm(`Excluir ${ras.length} aluno(s) pelos RAs informados? Esta ação não pode ser desfeita.`)) return;
+  try {
+    const result = await callRpc('app_students_delete_batch', {
+      p_session_token: currentUser.sessionToken,
+      p_ras: ras
+    });
+    const row = Array.isArray(result) ? result[0] : result;
+    const requested = parseRpcNumber(row?.requested_count, ras.length);
+    const deleted = parseRpcNumber(row?.deleted_count, 0);
+    const notFound = parseRpcNumber(row?.not_found_count, Math.max(requested - deleted, 0));
+    APP_STATE.globalStudentTotal = null;
+    showAlert('alert-list', 'success', `Exclusão em lote concluída. ${deleted} removido(s), ${notFound} não encontrado(s).`);
+    clearBatchDeleteBox();
+    await Promise.all([
+      renderAdminList(),
+      doSearchNow({ keepPage: true })
+    ]);
+  } catch (err) {
+    showAlert('alert-list', 'error', explainRpcError(err));
+  }
+}
+async function deleteAllStudents() {
+  if (!currentUser?.sessionToken || currentUser.role !== 'admin') {
+    showAlert('alert-list', 'error', 'Apenas administrador pode excluir alunos.');
+    return;
+  }
+  const confirmText = prompt('Digite APAGAR para confirmar a exclusão de TODOS os alunos:');
+  if (confirmText !== 'APAGAR') {
+    showAlert('alert-list', 'error', 'Operação cancelada.');
+    return;
+  }
+  try {
+    const deleted = await callRpc('app_students_delete_all', {
+      p_session_token: currentUser.sessionToken
+    });
+    const totalDeleted = parseRpcNumber(deleted, 0);
+    APP_STATE.globalStudentTotal = null;
+    showAlert('alert-list', 'success', `Todos os alunos foram excluídos. Total removido: ${totalDeleted}.`);
+    await Promise.all([
+      renderAdminList(),
+      doSearchNow({ keepPage: true })
+    ]);
+  } catch (err) {
+    showAlert('alert-list', 'error', explainRpcError(err));
+  }
+}
 
 async function renderUserList() {
   const body = document.getElementById('users-table-body');

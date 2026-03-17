@@ -158,6 +158,18 @@
         <div class="admin-search-row">
           <input class="admin-search-input" id="admin-search" type="text" placeholder="Buscar por nome ou RA..." oninput="renderAdminList()"/>
         </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <button class="btn-danger" onclick="deleteAllStudents()">🗑 Excluir Todos os Alunos</button>
+          <button class="btn-secondary" onclick="toggleBatchDeleteBox()">📋 Excluir em Lote por RA</button>
+        </div>
+        <div id="batch-delete-box" style="display:none;margin-bottom:16px">
+          <div style="font-size:0.78rem;font-weight:600;color:var(--g700);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">RAs para exclusão em lote</div>
+          <textarea id="batch-delete-ras" style="width:100%;height:100px;padding:10px;border:2px solid var(--g200);border-radius:9px;font-family:monospace;font-size:0.8rem;resize:vertical;outline:none;" placeholder="Um RA por linha, ou separados por vírgula&#10;Ex:&#10;12345&#10;67890"></textarea>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn-danger" onclick="deleteStudentsInBatch()">Excluir RAs Informados</button>
+            <button class="btn-secondary" onclick="clearBatchDeleteBox()">Limpar</button>
+          </div>
+        </div>
         <div class="admin-table-wrap">
           <table class="admin-table">
             <thead><tr>
